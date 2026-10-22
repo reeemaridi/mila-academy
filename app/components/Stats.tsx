@@ -92,7 +92,7 @@ export default function Stats({ content }: { content: SiteContent }) {
       </p>
 
       {/* Headline */}
-      <h2
+      <h2 className="display"
         style={{
           textAlign: 'center',
           color: 'var(--color-text)',
@@ -129,7 +129,7 @@ export default function Stats({ content }: { content: SiteContent }) {
             minWidth: 0,
             borderRight: i < STATS.length - 1 ? '1px solid rgba(var(--color-gold-rgb),0.25)' : 'none',
           }}>
-            <span
+            <span className="display"
               ref={el => { numRefs.current[i] = el }}
               style={{
                 fontSize: 'clamp(40px, 11vw, 80px)',

@@ -73,9 +73,9 @@ function ProgramCard({
       style={{
         backgroundColor: 'var(--color-surface)',
         border: `0.5px solid ${hover ? accent : 'var(--color-border)'}`,
-        borderRadius: 16, overflow: 'hidden',
+        borderRadius: 4, overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
-        boxShadow: hover ? `0 0 30px rgba(${accentRgb}, 0.2)` : 'none',
+        boxShadow: 'none',
         transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
       }}
     >
@@ -87,7 +87,7 @@ function ProgramCard({
       <div style={{
         position: 'relative', height: 160, flexShrink: 0, overflow: 'hidden',
         backgroundColor: 'var(--color-bg)',
-        backgroundImage: `radial-gradient(ellipse 70% 100% at 50% 100%, rgba(${accentRgb}, ${hover ? 0.3 : 0.2}) 0%, transparent 70%)`,
+        backgroundImage: 'none',
         transition: 'background-image 0.45s ease',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
@@ -203,7 +203,7 @@ export default function ProgramsExplorer({
 
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
-        <h2 style={{ color: 'var(--color-text)', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, margin: '0 0 8px', lineHeight: 1.1 }}>
+        <h2 className="display" style={{ color: 'var(--color-text)', fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, margin: '0 0 8px', lineHeight: 1.1 }}>
           {content.academy_programs_title}
         </h2>
         <p style={{ color: meta.accent, fontSize: 14, margin: '0 0 32px', letterSpacing: '0.5px' }}>
