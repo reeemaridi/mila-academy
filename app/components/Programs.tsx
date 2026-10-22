@@ -31,7 +31,7 @@ export default function Programs({ programs, content }: { programs: Program[]; c
 
       {/* Header */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 0 36px' }}>
-        <h2
+        <h2 className="display"
           style={{
             color: 'var(--color-text)',
             fontSize: 'clamp(32px, 5vw, 48px)',
@@ -57,7 +57,7 @@ export default function Programs({ programs, content }: { programs: Program[]; c
       {/* Cards grid */}
       <div className="programs-grid">
         {programs.map((prog, i) => {
-          const { color, colorRgb, Icon } = SPORT_STYLE[prog.sport]
+          const { color, Icon } = SPORT_STYLE[prog.sport]
           return (
             <div
               key={prog.id}
@@ -66,34 +66,17 @@ export default function Programs({ programs, content }: { programs: Program[]; c
               style={{
                 backgroundColor: 'var(--color-surface)',
                 border: `0.5px solid ${hoveredCard === i ? color : 'var(--color-border)'}`,
-                borderRadius: 16,
+                borderRadius: 4,
                 padding: 32,
                 display: 'flex',
                 flexDirection: 'column',
-                boxShadow:
-                  hoveredCard === i
-                    ? `0 0 30px rgba(${colorRgb}, 0.2)`
-                    : 'none',
+                boxShadow: 'none',
                 transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
                 cursor: 'default',
               }}
             >
-              {/* Icon circle */}
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: '50%',
-                  backgroundColor: `rgba(${colorRgb}, 0.12)`,
-                  border: `1px solid rgba(${colorRgb}, 0.3)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 18,
-                  flexShrink: 0,
-                  color,
-                }}
-              >
+              {/* Sport mark: plain, no tinted circle */}
+              <div style={{ marginBottom: 18, flexShrink: 0, color }}>
                 <Icon size={26} stroke={1.75} />
               </div>
 

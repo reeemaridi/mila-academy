@@ -110,7 +110,7 @@ export default function Gallery({ photos, content }: { photos: GalleryPhoto[]; c
       `}</style>
 
       {/* Title */}
-      <h2 style={{
+      <h2 className="display" style={{
         textAlign: 'center',
         color: 'var(--color-text)',
         fontSize: 'clamp(32px, 5vw, 48px)',

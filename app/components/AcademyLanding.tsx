@@ -41,11 +41,8 @@ export default function AcademyLanding({
           aria-hidden
           style={{
             position: 'absolute', inset: 0,
-            backgroundColor: '#0a0a0a',
-            backgroundImage: `
-              radial-gradient(ellipse 80% 60% at 50% 0%, rgba(${meta.accentRgb}, 0.28) 0%, transparent 70%),
-              radial-gradient(ellipse 60% 50% at 80% 100%, rgba(245, 197, 24, 0.12) 0%, transparent 70%)
-            `,
+            // A flat tint of the academy colour — no radial glows.
+            backgroundColor: `color-mix(in srgb, ${meta.accent} 24%, #121110)`,
           }}
         />
         {meta.heroImage && (
@@ -62,7 +59,7 @@ export default function AcademyLanding({
           alignItems: 'center', gap: 14, padding: '48px 0',
         }}>
           <Image src={meta.logo} alt={meta.name} width={96} height={64} style={{ height: 64, width: 'auto' }} preload />
-          <h1 style={{ color: '#fff', fontSize: 'clamp(32px, 6vw, 52px)', fontWeight: 800, margin: 0, lineHeight: 1.1 }}>
+          <h1 className="display" style={{ color: '#fff', fontSize: 'clamp(34px, 6.5vw, 60px)', fontWeight: 800, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
             {meta.name}
           </h1>
           <p style={{ color: meta.accent, fontSize: 16, fontWeight: 600, letterSpacing: '0.5px', margin: 0 }}>
@@ -89,7 +86,7 @@ export default function AcademyLanding({
         padding: '72px 24px', textAlign: 'center',
       }}>
         <div style={{ maxWidth: 620, margin: '0 auto' }}>
-          <h2 style={{ color: 'var(--color-text)', fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, margin: '0 0 14px', lineHeight: 1.15 }}>
+          <h2 className="display" style={{ color: 'var(--color-text)', fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800, margin: '0 0 14px', lineHeight: 1.15 }}>
             {meta.ctaTitle}
           </h2>
           <p style={{ color: 'var(--color-text-dim)', fontSize: 15, lineHeight: 1.7, margin: '0 0 28px' }}>

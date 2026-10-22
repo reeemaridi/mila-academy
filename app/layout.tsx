@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Archivo } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "./components/SmoothScrollProvider";
 import { getSiteContent } from "@/lib/site-data";
@@ -7,6 +7,14 @@ import { getSiteContent } from "@/lib/site-data";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+// Display face for headings: a sturdy grotesque with a width axis, set
+// condensed and uppercase in the hero so it reads like a team sheet.
+const archivo = Archivo({
+  variable: "--font-display",
+  subsets: ["latin"],
+  axes: ["wdth"],
 });
 
 const geistMono = Geist_Mono({
@@ -49,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      className={`${geistSans.variable} ${geistMono.variable} ${archivo.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
       {/* Inline script runs before React hydrates — prevents light/dark flash */}

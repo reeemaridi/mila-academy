@@ -117,7 +117,7 @@ export default function Testimonials({ testimonials, content }: { testimonials: 
         }
       `}</style>
       {/* Title */}
-      <h2 style={{
+      <h2 className="display" style={{
         textAlign: 'center',
         color: 'var(--color-text)',
         fontSize: 'clamp(32px, 5vw, 48px)',
@@ -189,8 +189,8 @@ export default function Testimonials({ testimonials, content }: { testimonials: 
                   flexShrink: 0,
                   backgroundColor: 'var(--color-surface)',
                   border: `0.5px solid ${i === idx ? 'var(--color-gold)' : 'var(--color-border)'}`,
-                  boxShadow: i === idx ? '0 0 28px rgba(var(--color-gold-rgb),0.14)' : 'none',
-                  borderRadius: 16,
+                  boxShadow: 'none',
+                  borderRadius: 4,
                   padding: 28,
                   display: 'flex',
                   flexDirection: 'column',

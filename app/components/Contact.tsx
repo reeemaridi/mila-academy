@@ -173,7 +173,7 @@ export default function Contact({ content }: { content: SiteContent }) {
 
         {/* ── LEFT — Form ───────────────────────────────────────────────────── */}
         <div>
-          <h2 style={{ color: 'var(--color-text)', fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 800, margin: '0 0 36px', lineHeight: 1.15 }}>
+          <h2 className="display" style={{ color: 'var(--color-text)', fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 800, margin: '0 0 36px', lineHeight: 1.15 }}>
             {content.contact_title}
           </h2>
 

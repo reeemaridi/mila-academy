@@ -1,193 +1,137 @@
-'use client'
-import type { CSSProperties } from 'react'
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { SiteContent } from '@/lib/content-schema'
 
+// Two halves, one per academy. No ball illustrations and no glow: each half is
+// a flat tint of its sport colour with the pitch / court markings drawn as thin
+// line work, and a real photograph laid under it as soon as one is uploaded
+// (Site Content → academy → Page banner photo).
+
+function PitchLines() {
+  // Half-way line, centre circle and one penalty area, cropped by the edge of
+  // the half so it reads as a plan of a pitch rather than an icon.
+  return (
+    <svg className="hero-lines" viewBox="0 0 600 700" fill="none" stroke="currentColor"
+      strokeWidth="2" aria-hidden preserveAspectRatio="xMaxYMax slice">
+      <line x1="0" y1="350" x2="600" y2="350" />
+      <circle cx="300" cy="350" r="120" />
+      <circle cx="300" cy="350" r="5" fill="currentColor" />
+      <rect x="130" y="0" width="340" height="150" />
+      <rect x="220" y="0" width="160" height="56" />
+      <path d="M 235 150 A 80 80 0 0 0 365 150" />
+    </svg>
+  )
+}
+
+function CourtLines() {
+  // Paint, free-throw circle and three-point arc.
+  return (
+    <svg className="hero-lines" viewBox="0 0 600 700" fill="none" stroke="currentColor"
+      strokeWidth="2" aria-hidden preserveAspectRatio="xMaxYMax slice">
+      <rect x="0" y="0" width="600" height="700" />
+      <rect x="210" y="0" width="180" height="270" />
+      <circle cx="300" cy="270" r="90" />
+      <path d="M 40 0 L 40 130 A 270 270 0 0 0 560 130 L 560 0" />
+      <path d="M 255 40 A 45 45 0 0 0 345 40" />
+    </svg>
+  )
+}
 
 export default function Hero({ content }: { content: SiteContent }) {
-  const [leftHov,  setLeftHov]  = useState(false)
-  const [rightHov, setRightHov] = useState(false)
-
-  // Layout is driven by CSS media queries, not a JS `isMobile` flag. The flag
-  // started false on the server, so phones rendered the side-by-side desktop
-  // hero on first paint and only snapped to the stacked layout after hydration.
-  const halfBase: CSSProperties = {
-    flex: 1,
-    minHeight: 0,
-    minWidth: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'var(--color-bg)',
-    position: 'relative',
-    overflow: 'hidden',
-  }
-
-  const enterBtn: CSSProperties = {
-    backgroundColor: 'var(--color-text)',
-    color: 'var(--color-bg)',
-    border: 'none',
-    padding: '10px 24px',
-    borderRadius: 6,
-    fontWeight: 600,
-    fontSize: 14,
-    fontFamily: 'inherit',
-    textDecoration: 'none',
-    display: 'inline-block',
-    transition: 'opacity 0.15s ease',
-    marginTop: 4,
-  }
+  const halves = [
+    {
+      key: 'football', href: '/football', cls: 'hero-fb', Lines: PitchLines,
+      name: content.football_name, est: content.football_est,
+      line: content.football_tagline, photo: content.football_hero_image, n: '01',
+    },
+    {
+      key: 'basketball', href: '/basketball', cls: 'hero-bb', Lines: CourtLines,
+      name: content.basketball_name, est: content.basketball_est,
+      line: content.basketball_tagline, photo: content.basketball_hero_image, n: '02',
+    },
+  ] as const
 
   return (
     <>
       <style>{`
-        @keyframes ballSpinY {
-          from { transform: rotateZ(0deg); }
-          to   { transform: rotateZ(360deg); }
-        }
-        .enter-btn:hover { opacity: 0.85 !important; }
-
         .hero-split {
-          /* dvh tracks the collapsing mobile URL bar; vh is the fallback for
-             browsers without it, where 100vh overflows behind the bar. */
           height: 100vh;
           height: 100dvh;
           display: flex;
           flex-direction: row;
           padding-top: 60px;
+          background: var(--color-bg);
         }
-        /* The ball shrinks with the viewport instead of holding 280px and
-           pushing the name and Enter button off a short screen. */
-        .hero-ball { width: 280px; height: 280px; }
-        .hero-divider { width: 1px; height: auto; }
-        /* Declared here rather than in the inline style object, so the media
-           queries below can actually override it. */
-        .hero-half { gap: 20px; }
+        .hero-half {
+          flex: 1; min-width: 0; min-height: 0; position: relative; overflow: hidden;
+          display: flex; flex-direction: column; justify-content: flex-end;
+          padding: clamp(24px, 4vw, 56px);
+          color: var(--color-text); text-decoration: none;
+          transition: flex-grow 0.5s ease;
+        }
+        .hero-fb { background: color-mix(in srgb, var(--color-football) 16%, var(--color-bg)); --tone: var(--color-football); }
+        .hero-bb { background: color-mix(in srgb, var(--color-basketball) 16%, var(--color-bg)); --tone: var(--color-basketball); }
+        .hero-split:hover .hero-half { flex-grow: 0.85; }
+        .hero-split .hero-half:hover { flex-grow: 1.3; }
+        .hero-photo { object-fit: cover; opacity: 0.55; mix-blend-mode: luminosity; }
+        .hero-lines {
+          position: absolute; right: -4%; bottom: -3%; width: min(78%, 520px); height: auto;
+          color: var(--tone); opacity: 0.28; transition: opacity 0.4s ease, transform 0.6s ease;
+          pointer-events: none;
+        }
+        .hero-half:hover .hero-lines { opacity: 0.5; transform: translateY(-6px); }
+        .hero-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; max-width: 30rem; }
+        .hero-num { font-size: 12px; letter-spacing: 0.18em; color: var(--tone); font-weight: 600; }
+        .hero-name {
+          font-family: var(--font-display), system-ui, sans-serif;
+          font-stretch: 78%; text-transform: uppercase; font-weight: 800;
+          font-size: clamp(40px, 6.4vw, 92px); line-height: 0.92; letter-spacing: -0.01em; margin: 0;
+        }
+        .hero-line { font-size: 15px; line-height: 1.5; color: var(--color-text-dim); margin: 0; }
+        .hero-est { font-size: 12px; letter-spacing: 0.08em; color: var(--color-text-faint); margin: 0; }
+        .hero-enter {
+          margin-top: 8px; align-self: flex-start; font-size: 14px; font-weight: 600;
+          padding-bottom: 4px; border-bottom: 1px solid var(--tone); color: var(--color-text);
+          transition: gap 0.2s ease; display: inline-flex; gap: 8px;
+        }
+        .hero-half:hover .hero-enter { gap: 14px; }
+        .hero-divider { width: 1px; background: var(--color-border-soft); flex-shrink: 0; }
 
         @media (max-width: 768px) {
-          .hero-split   { flex-direction: column; }
-          /* Each stacked half gets (100dvh - 60px) / 2. The name, the year and
-             the Enter button need ~127px of that, so the ball has to stay
-             under ~26vh or the button is clipped by the half's hidden overflow. */
-          .hero-ball    { width: min(280px, 26vh); height: min(280px, 26vh); }
+          .hero-split { flex-direction: column; }
+          .hero-split:hover .hero-half, .hero-split .hero-half:hover { flex-grow: 1; }
+          .hero-half { padding: 16px 20px; justify-content: center; }
+          .hero-body { gap: 8px; }
+          .hero-name { font-size: clamp(28px, 8.5vw, 46px); }
+          .hero-line { display: none; }
+          .hero-lines { width: 62%; }
           .hero-divider { width: auto; height: 1px; }
-          .hero-half    { gap: 14px; padding: 0 16px; }
         }
-        @media (max-width: 768px) and (max-height: 780px) {
-          .hero-ball { width: min(280px, 22vh); height: min(280px, 22vh); }
-          .hero-half { gap: 10px; }
-        }
+        @media (max-width: 768px) and (max-height: 720px) { .hero-est { display: none; } .hero-num { display: none; } }
         @media (prefers-reduced-motion: reduce) {
-          .hero-ball img { animation: none !important; }
+          .hero-half, .hero-lines, .hero-enter { transition: none; }
         }
       `}</style>
 
       <section id="hero" className="hero-split">
-        {/* ── Left: Football ──────────────────────────────────────────────────── */}
-        <div
-          className="hero-half"
-          onMouseEnter={() => setLeftHov(true)}
-          onMouseLeave={() => setLeftHov(false)}
-          style={halfBase}
-        >
-          <div className="hero-ball" style={{
-            position: 'relative', flexShrink: 0,
-            perspective: 700,
-            filter: leftHov
-              ? 'drop-shadow(0 0 48px rgba(22,163,74,0.45))'
-              : 'drop-shadow(0 0 32px rgba(22,163,74,0.2))',
-            transition: 'filter 0.3s ease',
-          }}>
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }}>
-              <Image
-                src={content.football_ball_image}
-                alt="Football"
-                width={280}
-                height={280}
-                draggable={false}
-                loading="eager"
-                style={{
-                  display: 'block', width: '100%', height: '100%',
-                  animation: 'ballSpinY 6s linear infinite',
-                  userSelect: 'none',
-                }}
-              />
-            </div>
-            <div style={{
-              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none',
-              background: 'radial-gradient(circle at 36% 30%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.0) 50%, rgba(0,0,0,0.2) 100%)',
-            }} />
+        {halves.map((h, i) => (
+          <div key={h.key} style={{ display: 'contents' }}>
+            {i === 1 && <div className="hero-divider" />}
+            <Link href={h.href} className={`hero-half ${h.cls}`}>
+              {h.photo && (
+                <Image src={h.photo} alt="" fill sizes="50vw" className="hero-photo" preload={i === 0} />
+              )}
+              <h.Lines />
+              <div className="hero-body">
+                <span className="hero-num">{h.n}</span>
+                <h2 className="hero-name">{h.name}</h2>
+                {h.line && <p className="hero-line">{h.line}</p>}
+                <p className="hero-est">{h.est}</p>
+                <span className="hero-enter">{content.hero_enter_label}</span>
+              </div>
+            </Link>
           </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--color-text)', fontSize: 'clamp(18px, 5vw, 22px)', fontWeight: 600, margin: '0 0 6px' }}>
-              {content.football_name}
-            </p>
-            <p style={{ color: 'var(--color-text-dim)', fontSize: 13, margin: 0 }}>
-              {content.football_est}
-            </p>
-          </div>
-
-          <Link href="/football" className="enter-btn" style={enterBtn}>
-            {content.hero_enter_label}
-          </Link>
-        </div>
-
-        {/* ── Divider (vertical on desktop, horizontal when stacked) ──────────── */}
-        <div className="hero-divider" style={{ backgroundColor: 'var(--color-border-soft)', flexShrink: 0, alignSelf: 'stretch' }} />
-
-        {/* ── Right: Basketball ───────────────────────────────────────────────── */}
-        <div
-          className="hero-half"
-          onMouseEnter={() => setRightHov(true)}
-          onMouseLeave={() => setRightHov(false)}
-          style={halfBase}
-        >
-          <div className="hero-ball" style={{
-            position: 'relative', flexShrink: 0,
-            perspective: 700,
-            filter: rightHov
-              ? 'drop-shadow(0 0 48px rgba(249,115,22,0.5))'
-              : 'drop-shadow(0 0 32px rgba(249,115,22,0.2))',
-            transition: 'filter 0.3s ease',
-          }}>
-            <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }}>
-              <Image
-                src={content.basketball_ball_image}
-                alt="Basketball"
-                width={280}
-                height={280}
-                draggable={false}
-                loading="eager"
-                style={{
-                  display: 'block', width: '100%', height: '100%',
-                  animation: 'ballSpinY 4s linear infinite',
-                  userSelect: 'none',
-                }}
-              />
-            </div>
-            <div style={{
-              position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none',
-              background: 'radial-gradient(circle at 36% 30%, rgba(255,220,150,0.45) 0%, rgba(255,255,255,0.0) 50%, rgba(0,0,0,0.2) 100%)',
-            }} />
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--color-text)', fontSize: 'clamp(18px, 5vw, 22px)', fontWeight: 600, margin: '0 0 6px' }}>
-              {content.basketball_name}
-            </p>
-            <p style={{ color: 'var(--color-text-dim)', fontSize: 13, margin: 0 }}>
-              {content.basketball_est}
-            </p>
-          </div>
-
-          <Link href="/basketball" className="enter-btn" style={enterBtn}>
-            {content.hero_enter_label}
-          </Link>
-        </div>
+        ))}
       </section>
     </>
   )
