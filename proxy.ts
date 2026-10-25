@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { SESSION_COOKIE, verifySession } from '@/lib/session-token'
 
-const PUBLIC_PATHS = ['/dashboard/login']
+const PUBLIC_PATHS = ['/dashboard/login', '/dashboard/forgot-password', '/dashboard/reset-password']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

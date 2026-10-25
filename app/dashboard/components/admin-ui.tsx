@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { IconX, IconUpload, IconPhoto, IconExternalLink } from '@tabler/icons-react'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
+import { logout } from '@/lib/auth'
 
 export const GOLD = '#f5c518'
 
@@ -22,7 +23,10 @@ export async function api<T = unknown>(url: string, init?: RequestInit & { json?
   })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) {
-    if (res.status === 401) throw new Error('Your session has ended — sign in again.')
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') void logout().finally(() => { window.location.href = '/dashboard/login' })
+      throw new Error('Your session has ended — sign in again.')
+    }
     throw new Error(body?.error ?? `Request failed (${res.status})`)
   }
   return body as T

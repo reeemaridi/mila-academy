@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { login } from '@/lib/auth'
 
 // ── Floating label input ───────────────────────────────────────────────────────
@@ -150,6 +151,9 @@ export default function LoginPage() {
               </>
             ) : 'Sign in'}
           </button>
+          <Link href="/dashboard/forgot-password" style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', textDecoration: 'none' }}>
+            Forgot password?
+          </Link>
         </form>
 
       </div>

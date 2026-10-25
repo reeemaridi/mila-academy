@@ -96,3 +96,8 @@ export async function verifySession(token: string | undefined | null): Promise<T
     return null
   }
 }
+
+/** The signing secret, for other signed tokens (password reset links). Null if unconfigured. */
+export function signingSecret(): string | null {
+  return secret()
+}

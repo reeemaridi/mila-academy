@@ -349,7 +349,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Session comes from the shared external store rather than being copied into
   // local state inside an effect, which rendered once as logged-out first.
   const { user: session, ready } = useSession()
-  const isLoginPage = pathname === '/dashboard/login'
+  const isLoginPage = ['/dashboard/login', '/dashboard/forgot-password', '/dashboard/reset-password'].includes(pathname)
   const user = session?.loggedIn ? session : null
   const checking = !ready
 
@@ -432,7 +432,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
 
-  if (pathname === '/dashboard/login') {
+  if (isLoginPage) {
     if (checking) return null
     return <>{children}</>
   }
