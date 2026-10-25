@@ -205,7 +205,7 @@ const EMPTY_FORM = {
   name: '', dob: '', nationality: 'Lebanese', position: '', jersey_number: '',
   team_id: '', academy: 'MFA' as 'MFA' | 'MBA',
   parent_name: '', parent_phone: '', parent_whatsapp: '', emergency_contact: '',
-  blood_type: '', allergies: '', injuries: '', doctor_contact: '',
+  blood_type: '', allergies: '', injuries: '', doctor_contact: '', insured: 'no',
   payment_status: 'paid' as 'paid' | 'unpaid' | 'partial', payment_amount: '150',
   notes: '',
   create_login: false, login_email: '', login_role: 'parent' as 'parent' | 'student',
@@ -316,6 +316,7 @@ function AddStudentModal({
         allergies: form.allergies || 'None',
         injuries: form.injuries || 'None',
         doctor_contact: form.doctor_contact,
+        insured: form.insured === 'yes',
         parent_name: form.parent_name,
         parent_phone: form.parent_phone,
         parent_whatsapp: form.parent_whatsapp,
@@ -446,6 +447,12 @@ function AddStudentModal({
               <Field label="Allergies"         value={form.allergies}      onChange={set('allergies')}      />
               <Field label="Injury History"    value={form.injuries}       onChange={set('injuries')}       />
               <Field label="Doctor / Contact"  value={form.doctor_contact} onChange={set('doctor_contact')} />
+              <SelectField
+                label="Insurance"
+                value={form.insured}
+                onChange={set('insured')}
+                options={[{ value: 'no', label: 'No insurance' }, { value: 'yes', label: 'Insured' }]}
+              />
             </>}
 
             {section === 'payment' && <>

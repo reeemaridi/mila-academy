@@ -13,7 +13,7 @@ import { NextResponse } from 'next/server'
 
 export const STUDENT_FIELDS = [
   'name', 'photo_url', 'dob', 'nationality', 'position', 'jersey_number',
-  'team_id', 'academy', 'blood_type', 'allergies', 'injuries', 'doctor_contact',
+  'team_id', 'academy', 'blood_type', 'allergies', 'injuries', 'doctor_contact', 'insured',
   'parent_name', 'parent_phone', 'parent_whatsapp', 'emergency_contact',
   'payment_type', 'payment_status', 'payment_amount', 'payment_due_date',
   'notes', 'awards', 'archived_at',

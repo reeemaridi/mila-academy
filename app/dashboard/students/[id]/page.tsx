@@ -373,6 +373,7 @@ function MedicalTab({ student, role }: { student: StudentRow; role: string }) {
       <InfoRow label="Allergies"       value={student.allergies}       />
       <InfoRow label="Injury History"  value={student.injuries}        />
       <InfoRow label="Doctor / Contact"value={student.doctor_contact}  />
+      <InfoRow label="Insurance"       value={student.insured ? 'Insured' : 'No insurance'} />
       <div style={{ paddingBottom: 16 }} />
     </Card>
   )
