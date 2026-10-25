@@ -372,7 +372,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [ready, isLoginPage, user, router, pathname])
 
   const searchCoaches = useAllCoaches()
-  const { data: searchStudents } = useAdminData<StudentRow[]>('/api/admin/students', true, [])
+  const { data: searchStudents } = useAdminData<StudentRow[]>('/api/admin/students', !isLoginPage && !!user, [])
 
   // Close the sidebar when the route changes. Adjusting state during render is
   // React's documented alternative to a setState-in-effect here: it re-renders

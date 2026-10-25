@@ -191,3 +191,8 @@ export function hasAccess(resource: Resource, action: Action, user: SessionUser)
       return false
   }
 }
+
+/** True on the sign-in, forgot-password and reset-password pages, where a 401 is expected. */
+export function isAuthPage(): boolean {
+  return /^\/dashboard\/(login|forgot-password|reset-password)/.test(window.location.pathname)
+}
