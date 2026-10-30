@@ -10,8 +10,15 @@ gsap.registerPlugin(ScrollTrigger)
 
 export default function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  // Lenis takes over the mouse wheel and scrolls the window, so on the
+  // dashboard a wheel over the sidebar, a table or a dialog moved the page
+  // behind it instead — the sidebar couldn't be scrolled to its lower links at
+  // all. The dashboard has no scroll animations, so it uses native scrolling.
+  const onDashboard = pathname.startsWith('/dashboard')
 
   useEffect(() => {
+    if (onDashboard) return
+
     // Respect the OS "reduce motion" setting: smooth-scroll hijacking is
     // exactly the kind of motion WCAG 2.3.3 asks us to drop. Without this the
     // page keeps easing under the user no matter what they've asked for.
@@ -46,7 +53,7 @@ export default function SmoothScrollProvider({ children }: { children: React.Rea
       lenis.destroy()
       setLenisInstance(null)
     }
-  }, [])
+  }, [onDashboard])
 
   // Replay the URL hash after every navigation.
   //
