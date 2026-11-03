@@ -6,6 +6,7 @@ import { changePassword } from '@/lib/auth'
 import { useSession } from '@/lib/use-session'
 import { toast } from '../components/toast'
 import { PageHeader, Card, Button, TextField, ErrorBanner, Badge, GOLD } from '../components/admin-ui'
+import DocumentsPanel from '../components/DocumentsPanel'
 
 const MIN = 8
 
@@ -76,6 +77,13 @@ export default function AccountPage() {
           To change your name, email or role, ask an administrator.
         </p>
       </Card>
+
+      {user.role !== 'parent' && user.role !== 'student' && !forced && (
+        <div style={{ marginBottom: 16 }}>
+          <h2 style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 700, margin: '0 0 12px' }}>My photo and documents</h2>
+          <DocumentsPanel ownerType="user" ownerId={user.id} meId={user.id} isAdmin={user.role === 'admin'} />
+        </div>
+      )}
 
       <Card>
         <h2 style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Change password</h2>

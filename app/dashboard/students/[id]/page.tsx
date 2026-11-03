@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import {
   IconArrowLeft, IconPhone, IconBrandWhatsapp, IconX, IconPlus,
   IconShieldLock, IconAward, IconStarFilled, IconStar, IconEdit,
-  IconCheck, IconActivity, IconCreditCard, IconNotes, IconMedicalCross,
+  IconCheck, IconActivity, IconCreditCard, IconNotes, IconMedicalCross, IconFolder,
 } from '@tabler/icons-react'
 import {
   generateAttendance, generateRatings, generatePayments,
@@ -13,6 +13,7 @@ import {
 } from '../data'
 import { useSession } from '@/lib/use-session'
 import { fetchStudent, fetchTeams, type TeamRow } from '../api'
+import DocumentsPanel from '../../components/DocumentsPanel'
 import { useModal, modalOverlayProps } from '../../hooks/useModal'
 
 // ── Shared mini-components ─────────────────────────────────────────────────────
@@ -627,6 +628,7 @@ const ALL_TABS = [
   { key: 'ratings',    label: 'Ratings',    Icon: IconStarFilled  },
   { key: 'attendance', label: 'Attendance', Icon: IconActivity    },
   { key: 'payments',   label: 'Payments',   Icon: IconCreditCard  },
+  { key: 'documents',  label: 'Documents',  Icon: IconFolder      },
 ] as const
 
 type Tab = typeof ALL_TABS[number]['key']
@@ -652,7 +654,9 @@ export default function StudentDetailPage() {
   const role = authUser?.role ?? 'student'
 
   const TABS = ALL_TABS.filter(t =>
-    t.key !== 'payments' || (role !== 'coach' && role !== 'student')
+    t.key === 'documents'
+      ? role !== 'coach'
+      : t.key !== 'payments' || (role !== 'coach' && role !== 'student')
   )
 
   useEffect(() => {
@@ -739,14 +743,17 @@ export default function StudentDetailPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
           {/* Avatar */}
           <div style={{
-            width: 80, height: 80, borderRadius: '50%', flexShrink: 0,
+            width: 80, height: 80, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
             backgroundColor: student.academy === 'MFA' ? 'rgba(22,163,74,0.2)' : 'rgba(249,115,22,0.2)',
             border: `3px solid ${student.academy === 'MFA' ? 'rgba(22,163,74,0.5)' : 'rgba(249,115,22,0.5)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: student.academy === 'MFA' ? '#16a34a' : '#f97316',
             fontWeight: 800, fontSize: 26,
           }}>
-            {inits}
+            {student.photo_url
+              // eslint-disable-next-line @next/next/no-img-element -- private, cookie-authenticated photo
+              ? <img src={student.photo_url} alt={student.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : inits}
           </div>
 
           {/* Name + meta */}
@@ -814,6 +821,7 @@ export default function StudentDetailPage() {
       {tab === 'ratings'    && <RatingsTab    key={student.id} student={student} />}
       {tab === 'attendance' && <AttendanceTab key={student.id} student={student} />}
       {tab === 'payments'   && <PaymentsTab   key={student.id} student={student} />}
+      {tab === 'documents'  && authUser && <DocumentsPanel key={student.id} ownerType="student" ownerId={student.id} meId={authUser.id} isAdmin={role === 'admin'} />}
     </div>
   )
 }

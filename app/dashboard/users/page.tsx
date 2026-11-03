@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  IconPlus, IconPencil, IconTrash, IconKey, IconCopy, IconSearch, IconLock, IconLockOpen,
+  IconPlus, IconPencil, IconTrash, IconKey, IconCopy, IconSearch, IconLock, IconLockOpen, IconFolder,
 } from '@tabler/icons-react'
 import { useRequireAccess } from '../hooks/useRequireAccess'
 import { refreshSession } from '@/lib/auth'
 import { toast } from '../components/toast'
 import { fetchStudents, fetchTeams, type TeamRow } from '../students/api'
+import DocumentsPanel from '../components/DocumentsPanel'
 import type { StudentRow } from '../students/data'
 import {
   api, useAdminData, PageHeader, Card, Button, TextField, SelectField, Toggle, Modal,
@@ -265,6 +266,7 @@ export default function UsersAdminPage() {
   const [editing, setEditing] = useState<UserRow | null | 'new'>(null)
   const [resetting, setResetting] = useState<UserRow | null>(null)
   const [reveal, setReveal] = useState<{ email: string; password: string } | null>(null)
+  const [docsFor, setDocsFor] = useState<UserRow | null>(null)
 
   // Teams/students only feed the link pickers and labels; the page works without them.
   useEffect(() => {
@@ -385,6 +387,7 @@ export default function UsersAdminPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     <Button variant="secondary" onClick={() => setEditing(u)}><IconPencil size={14} /> Edit</Button>
+                    <Button variant="secondary" onClick={() => setDocsFor(u)} title="Photo and legal papers"><IconFolder size={14} /> Documents</Button>
                     {!self && <Button variant="secondary" onClick={() => setResetting(u)} title="Set or reset this user's password"><IconKey size={14} /> Set password</Button>}
                     {!self && (u.disabled
                       ? <Button variant="secondary" onClick={() => setDisabled(u, false)}><IconLockOpen size={14} /> Enable</Button>
@@ -418,6 +421,11 @@ export default function UsersAdminPage() {
           onClose={() => setResetting(null)}
           onDone={onPasswordSet}
         />
+      )}
+      {docsFor && user && (
+        <Modal title={`${docsFor.name} — photo and documents`} onClose={() => setDocsFor(null)} width={680}>
+          <DocumentsPanel ownerType="user" ownerId={docsFor.id} meId={user.id} isAdmin />
+        </Modal>
       )}
       {reveal && <TempPasswordModal email={reveal.email} password={reveal.password} onClose={() => setReveal(null)} />}
     </div>

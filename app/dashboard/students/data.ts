@@ -14,6 +14,7 @@ export interface StudentRow {
   injuries: string
   doctor_contact: string
   insured?: boolean
+  photo_url?: string | null
   parent_name: string
   parent_phone: string
   parent_whatsapp: string

@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { readJson, dbError, badRequest, unauthorized, notFound } from '@/lib/api-fields'
 import { PUBLIC_USER_COLUMNS, findUserById, countActiveAdmins } from '@/lib/server/users'
 import { userValues, isDuplicateEmail } from '../validate'
+import { removeOwnerDocuments } from '@/lib/server/documents'
 
 const conflict = (error: string) => NextResponse.json({ error }, { status: 409 })
 
@@ -66,6 +67,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return conflict('This is the last active admin and cannot be deleted.')
   }
 
+  await removeOwnerDocuments('user', id)
   const { error } = await getSupabaseAdmin().from('app_users').delete().eq('id', id)
   if (error) return dbError('users.delete', error)
   return NextResponse.json({ ok: true })

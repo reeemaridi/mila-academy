@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, notFound } from '@/lib/api-fields'
+import { removeOwnerDocuments } from '@/lib/server/documents'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
@@ -55,6 +56,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params
   const db = getSupabaseAdmin()
+  await removeOwnerDocuments('student', id)
+  // Their linked logins go too, along with any files those accounts hold.
+  const { data: logins } = await db.from('app_users').select('id').eq('student_id', id).in('role', ['parent', 'student'])
+  for (const l of logins ?? []) await removeOwnerDocuments('user', l.id)
   await db.from('app_users').delete().eq('student_id', id).in('role', ['parent', 'student'])
   const { error, count } = await db
     .from('students').delete({ count: 'exact' }).eq('id', id)
