@@ -31,6 +31,8 @@ export interface CoachRow {
   contract_end: string | null
   archived_at: string | null
   created_at?: string
+  /** administrators only: an account with this coach's email exists */
+  has_login?: boolean
 }
 
 /** The columns POST and PATCH accept — see COACH_FIELDS in lib/api-fields.ts. */
@@ -107,10 +109,21 @@ export function useAllCoaches(): CoachRow[] {
 // ── Mutations ─────────────────────────────────────────────────────────────────
 // Admin-only; the API enforces that regardless of what the UI shows.
 
-export async function createCoach(input: CoachInput): Promise<CoachRow> {
-  const { data } = await api<{ data: CoachRow }>('/api/admin/coaches', { method: 'POST', json: input })
+/** Sign-in details shown to the admin once, to pass on to the coach. */
+export interface NewLogin { email: string; password: string }
+
+/** Creates the coach together with their sign-in (the email is required). */
+export async function createCoach(input: CoachInput): Promise<{ coach: CoachRow; login: NewLogin }> {
+  const res = await api<{ data: CoachRow; temporaryPassword: string }>('/api/admin/coaches', { method: 'POST', json: input })
   await reloadCoaches()
-  return data
+  return { coach: res.data, login: { email: (input.email ?? '').trim().toLowerCase(), password: res.temporaryPassword } }
+}
+
+/** Gives an existing coach profile a sign-in. */
+export async function createLoginForCoach(id: string, email?: string): Promise<NewLogin> {
+  const res = await api<{ user: { email: string }; temporaryPassword: string }>(`/api/admin/coaches/${id}/login`, { method: 'POST', json: email ? { email } : {} })
+  await reloadCoaches()
+  return { email: res.user.email, password: res.temporaryPassword }
 }
 
 export async function updateCoach(id: string, patch: CoachInput): Promise<CoachRow> {

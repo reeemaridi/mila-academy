@@ -8,7 +8,7 @@ import { useModal, modalOverlayProps } from '../hooks/useModal'
 import { useSelectedAcademy } from '@/lib/use-session'
 import { useAdminData, confirmAction } from '../components/admin-ui'
 import type { TeamRow } from '../students/api'
-import { useCoaches, createCoach, updateCoach, deleteCoach, type CoachRow, type CoachInput } from './data'
+import { useCoaches, createCoach, createLoginForCoach, updateCoach, deleteCoach, type CoachRow, type CoachInput, type NewLogin } from './data'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -43,6 +43,33 @@ const FIELD: React.CSSProperties = {
 }
 const LBL: React.CSSProperties = { color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: 5 }
 
+// ── Sign-in details (shown once) ──────────────────────────────────────────────
+
+function LoginDetailsModal({ name, login, onClose }: { name: string; login: NewLogin; onClose: () => void }) {
+  useModal(onClose)
+  const text = `Email: ${login.email}
+Temporary password: ${login.password}`
+  return (
+    <div {...modalOverlayProps} aria-label="Sign-in details" style={{ position: 'fixed', inset: 0, zIndex: 2100, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '0.5px solid var(--border)', borderRadius: 16, width: '100%', maxWidth: 460, padding: 'clamp(18px, 5vw, 28px)' }}>
+        <h2 style={{ color: 'var(--text-primary)', fontSize: 18, fontWeight: 700, margin: '0 0 10px' }}>{name} can now sign in</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6, margin: '0 0 14px' }}>
+          Send these details to the coach. The password is shown <strong>only once</strong>; they choose their own when they first sign in, and after that only they know it.
+        </p>
+        <div style={{ backgroundColor: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 14, fontFamily: 'var(--font-geist-mono), monospace', fontSize: 14, lineHeight: 1.8, wordBreak: 'break-all' }}>
+          <div><span style={{ color: 'var(--text-muted)' }}>Sign in at: </span>{typeof window !== 'undefined' ? `${window.location.origin}/dashboard/login` : '/dashboard/login'}</div>
+          <div><span style={{ color: 'var(--text-muted)' }}>Email: </span>{login.email}</div>
+          <div><span style={{ color: 'var(--text-muted)' }}>Password: </span><span style={{ color: '#f5c518', fontWeight: 700, userSelect: 'all' }}>{login.password}</span></div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button onClick={() => { void navigator.clipboard?.writeText(text).then(() => toast('Copied')) }} style={{ flex: 1, padding: '11px 0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', backgroundColor: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>Copy</button>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px 0', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', backgroundColor: '#f5c518', color: '#000', border: 'none' }}>Done</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Add / Edit Coach Modal ────────────────────────────────────────────────────
 
 /** `date` columns reject an empty string, so blank dates have to go as null. */
@@ -55,7 +82,7 @@ function CoachFormModal({
   teams: TeamRow[]
   lookup: Lookup
   userRole: string
-  onDone: (verb: string, name: string) => void
+  onDone: (verb: string, name: string, login?: NewLogin) => void
   onClose: () => void
 }) {
   const editing = coach !== null
@@ -86,6 +113,7 @@ function CoachFormModal({
   async function save() {
     const name = form.name.trim()
     if (!name) { setError('Full name is required.'); return }
+    if (!editing && !/^[^s@]+@[^s@]+.[^s@]+$/.test(form.email.trim())) { setError('A valid email is required: it is the coach’s sign-in.'); return }
 
     const values: CoachInput = {
       name,
@@ -111,9 +139,13 @@ function CoachFormModal({
     setSaving(true)
     setError('')
     try {
-      if (editing) await updateCoach(coach.id, values)
-      else await createCoach(values)
-      onDone(editing ? 'updated' : 'added', name)
+      if (editing) {
+        await updateCoach(coach.id, values)
+        onDone('updated', name)
+      } else {
+        const { login } = await createCoach(values)
+        onDone('added', name, login)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save')
     } finally {
@@ -165,7 +197,10 @@ function CoachFormModal({
           <div><label style={LBL}>BIO</label><textarea rows={3} style={{ ...FIELD, resize: 'vertical' }} value={form.bio} onChange={e => set('bio', e.target.value)} placeholder="Brief coach biography…" /></div>
           <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12 }}>
             <div><label style={LBL}>PHONE</label><input style={FIELD} value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
-            <div><label style={LBL}>EMAIL</label><input style={FIELD} value={form.email} onChange={e => set('email', e.target.value)} /></div>
+            <div>
+              <label style={LBL}>{editing ? 'EMAIL' : 'EMAIL * (THEIR SIGN-IN)'}</label>
+              <input type="email" style={FIELD} value={form.email} onChange={e => set('email', e.target.value)} />
+            </div>
           </div>
           <div><label style={LBL}>CERTIFICATIONS (comma-separated)</label><input style={FIELD} value={form.certifications} onChange={e => set('certifications', e.target.value)} placeholder="UEFA B License, FIFA Grassroots…" /></div>
           <div className="form-row-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12 }}>
@@ -186,7 +221,7 @@ function CoachFormModal({
           {error && <p role="alert" style={{ color: '#f87171', fontSize: 12, margin: 0 }}>{error}</p>}
 
           <button onClick={save} disabled={saving} style={{ width: '100%', padding: '12px 0', borderRadius: 10, fontSize: 14, fontWeight: 700, backgroundColor: '#16a34a', color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
-            {saving ? 'Saving…' : editing ? 'Save Changes' : 'Add Coach'}
+            {saving ? 'Saving…' : editing ? 'Save Changes' : 'Add Coach and create sign-in'}
           </button>
         </div>
       </div>
@@ -209,13 +244,14 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function CoachDetailModal({
-  coach, lookup, userRole, onEdit, onDelete, onClose,
+  coach, lookup, userRole, onEdit, onDelete, onCreateLogin, onClose,
 }: {
   coach: CoachRow
   lookup: Lookup
   userRole: string
   onEdit: () => void
   onDelete: () => void
+  onCreateLogin: () => void
   onClose: () => void
 }) {
   const [tab, setTab] = useState<Tab>('Profile')
@@ -264,6 +300,15 @@ function CoachDetailModal({
             <button onClick={onDelete} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(220,38,38,0.12)', color: '#f87171', border: '1px solid rgba(220,38,38,0.3)' }}>
               <IconTrash size={15} /> Delete
             </button>
+            {coach.has_login ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)' }}>
+                ✓ Can sign in
+              </span>
+            ) : (
+              <button onClick={onCreateLogin} title="This coach has no sign-in yet" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', backgroundColor: 'rgba(245,197,24,0.12)', color: '#f5c518', border: '1px solid rgba(245,197,24,0.35)' }}>
+                Create sign-in
+              </button>
+            )}
           </div>
         )}
 
@@ -434,11 +479,27 @@ export default function CoachesPage() {
   const [search,     setSearch]     = useState('')
   const [filterTeam, setFilterTeam] = useState('All')
 
-  function onSaved(verb: string, name: string) {
+  const [reveal, setReveal] = useState<{ name: string; login: NewLogin } | null>(null)
+
+  function onSaved(verb: string, name: string, login?: NewLogin) {
     setShowForm(false)
     setEditing(null)
     setSelected(null)
     toast(`${name} ${verb} successfully`)
+    if (login) setReveal({ name, login })
+  }
+
+  // A coach profile added before sign-ins were created together with it.
+  async function createLogin(c: CoachRow) {
+    const email = c.email?.trim() || (window.prompt(`Email for ${c.name}'s sign-in:`) ?? '').trim()
+    if (!email) return
+    try {
+      const login = await createLoginForCoach(c.id, email)
+      setSelected(null)
+      setReveal({ name: c.name, login })
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not create the sign-in')
+    }
   }
 
   async function removeCoach(c: CoachRow) {
@@ -533,9 +594,11 @@ export default function CoachesPage() {
           userRole={userRole}
           onEdit={() => { setEditing(selected); setShowForm(true) }}
           onDelete={() => void removeCoach(selected)}
+          onCreateLogin={() => void createLogin(selected)}
           onClose={() => setSelected(null)}
         />
       )}
+      {reveal && <LoginDetailsModal name={reveal.name} login={reveal.login} onClose={() => setReveal(null)} />}
       {showForm && (
         <CoachFormModal
           coach={editing}
