@@ -3,7 +3,7 @@ import { isAdminRequest } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { readJson, dbError, badRequest, unauthorized } from '@/lib/api-fields'
 import { hashPassword, passwordProblem } from '@/lib/server/passwords'
-import { PUBLIC_USER_COLUMNS } from '@/lib/server/users'
+import { toPublic, type UserRecord } from '@/lib/server/users'
 import { userValues, temporaryPassword, isDuplicateEmail } from './validate'
 
 export async function GET() {
@@ -11,11 +11,11 @@ export async function GET() {
 
   const { data, error } = await getSupabaseAdmin()
     .from('app_users')
-    .select(PUBLIC_USER_COLUMNS)
+    .select('*')
     .order('created_at', { ascending: true })
 
   if (error) return dbError('users.list', error)
-  return NextResponse.json({ data })
+  return NextResponse.json({ data: (data as UserRecord[]).map(toPublic) })
 }
 
 // Body: { email, name, role, academies, team_id?, student_id?, password? }
@@ -41,12 +41,12 @@ export async function POST(req: NextRequest) {
   const { data, error } = await getSupabaseAdmin()
     .from('app_users')
     .insert({ ...result.values, password_hash: await hashPassword(password), must_change_password: true })
-    .select(PUBLIC_USER_COLUMNS)
+    .select('*')
     .single()
 
   if (isDuplicateEmail(error)) {
     return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
   }
   if (error) return dbError('users.create', error)
-  return NextResponse.json({ data, temporaryPassword: password }, { status: 201 })
+  return NextResponse.json({ data: toPublic(data as UserRecord), temporaryPassword: password }, { status: 201 })
 }

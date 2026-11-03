@@ -115,8 +115,8 @@ function EmptyNote({ text }: { text: string }) {
 export default function DashboardHome() {
   const { user: session } = useSession()
   const name = session?.name ?? 'Coach'
-  // Money figures are for administrators; coaches don't see payments anywhere.
-  const isAdmin = session?.role === 'admin'
+  // Money figures: administrators, and coaches an administrator allowed.
+  const isAdmin = session?.role === 'admin' || !!session?.canViewPayments
   const [initials] = useState(() =>
     (name ?? 'C')
       .split(' ')

@@ -28,6 +28,7 @@ interface UserRow {
   student_id: string | null
   disabled: boolean
   must_change_password: boolean
+  can_view_payments?: boolean
   last_login_at: string | null
   created_at: string
 }
@@ -141,6 +142,7 @@ function UserModal({
   const [academies, setAcademies] = useState<Academy[]>(initial?.academies ?? ['MFA', 'MBA'])
   const [teamId, setTeamId] = useState(initial?.team_id ?? '')
   const [studentId, setStudentId] = useState(initial?.student_id ?? '')
+  const [canViewPayments, setCanViewPayments] = useState(!!initial?.can_view_payments)
   const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -169,6 +171,7 @@ function UserModal({
       team_id: role === 'coach' ? teamId || null : null,
       student_id: role === 'parent' || role === 'student' ? studentId || null : null,
     }
+    if (role === 'coach' && canViewPayments !== !!initial?.can_view_payments) body.can_view_payments = canViewPayments
     try {
       if (initial) {
         await api(`/api/admin/users/${initial.id}`, { method: 'PATCH', json: body })
@@ -223,6 +226,14 @@ function UserModal({
           help="Coaches linked to a team see that team’s players by default."
           options={[{ value: '', label: 'No specific team (all teams in their academies)' },
             ...teams.map(t => ({ value: t.id, label: `${t.name} · ${t.academy}` }))]} />
+      )}
+      {role === 'coach' && (
+        <div>
+          <Toggle label="Can view payments (read-only)" checked={canViewPayments} onChange={setCanViewPayments} />
+          <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '6px 0 0', lineHeight: 1.5 }}>
+            Lets this coach see the Payments page and each student’s payment status. They can’t change or mark payments.
+          </p>
+        </div>
       )}
       {needsStudent && (
         <SelectField label={role === 'parent' ? 'Their child' : 'Student record'} value={studentId} onChange={pickStudent}

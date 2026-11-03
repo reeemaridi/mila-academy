@@ -22,6 +22,8 @@ export interface SessionUser {
   teamId?: string | null
   studentId?: string
   mustChangePassword?: boolean
+  /** admins always; coaches only when an administrator switched it on */
+  canViewPayments?: boolean
   selectedAcademy: AcademyFilter
   loggedIn: true
 }
@@ -160,7 +162,8 @@ export function hasAccess(resource: Resource, action: Action, user: SessionUser)
 
     case 'coach':
       // Coaches cannot see financial data, the website editor, or accounts
-      if (resource === 'payments') return false
+      // Payments are read-only, and only for coaches an administrator allowed.
+      if (resource === 'payments') return action === 'view' && !!user.canViewPayments
       if (resource === 'settings') return false
       if (resource === 'website')  return false
       if (resource === 'users')    return false

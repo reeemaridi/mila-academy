@@ -67,7 +67,7 @@ const ACCOUNT_NAV: NavItem = { label: 'My Account', href: '/dashboard/account', 
 
 function navItemsFor(user: SessionUser): NavItem[] {
   if (user.role === 'admin') return [...MAIN_NAV, ...ADMIN_NAV, ACCOUNT_NAV]
-  if (user.role === 'coach') return [...MAIN_NAV.filter(n => n.label !== 'Payments'), ACCOUNT_NAV]
+  if (user.role === 'coach') return [...MAIN_NAV.filter(n => n.label !== 'Payments' || user.canViewPayments), ACCOUNT_NAV]
   return [
     { label: 'My Profile', href: `/dashboard/students/${user.studentId ?? ''}`, Icon: IconBuildingArch },
     { label: 'Matches',    href: '/dashboard/matches', Icon: IconTrophy },

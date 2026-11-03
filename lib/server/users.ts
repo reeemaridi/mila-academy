@@ -16,6 +16,8 @@ export interface UserRecord {
   student_id: string | null
   disabled: boolean
   must_change_password: boolean
+  /** coaches only: may see payment information (column added by migration_payments_permission.sql; absent until it is run) */
+  can_view_payments?: boolean
   session_version: number
   last_login_at: string | null
   created_at: string
@@ -88,5 +90,6 @@ export function sessionUserFor(u: UserRecord | PublicUser) {
     teamId: u.team_id,
     studentId: u.student_id ?? undefined,
     mustChangePassword: u.must_change_password,
+    canViewPayments: u.role === 'admin' || !!u.can_view_payments,
   }
 }

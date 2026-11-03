@@ -19,6 +19,15 @@ export const STUDENT_FIELDS = [
   'notes', 'awards', 'archived_at',
 ] as const
 
+/** Money columns of a student record: only admins, and coaches an admin allowed, may read them. */
+export const PAYMENT_FIELDS = ['payment_type', 'payment_status', 'payment_amount', 'payment_due_date'] as const
+
+export function stripPayments<T extends Record<string, unknown>>(row: T): T {
+  const out: Record<string, unknown> = { ...row }
+  for (const k of PAYMENT_FIELDS) delete out[k]
+  return out as T
+}
+
 export const COACH_FIELDS = [
   'name', 'session_name', 'photo_url', 'specialty', 'team_ids', 'experience',
   'bio', 'phone', 'email', 'nationality', 'certifications', 'languages',

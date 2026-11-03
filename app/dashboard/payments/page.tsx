@@ -547,7 +547,7 @@ export default function PaymentsPage() {
                     {/* Actions */}
                     <td style={{ padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap' }}>
-                        {payment.status !== 'paid' && (
+                        {authUser?.role === 'admin' && payment.status !== 'paid' && (
                           <button onClick={() => setMarkPaidTarget(student)} style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(22,163,74,0.12)', border: '0.5px solid rgba(22,163,74,0.3)', color: '#16a34a', fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                             <IconCheck size={12} /> Mark Paid
                           </button>
@@ -557,9 +557,9 @@ export default function PaymentsPage() {
                             🧾 Receipt
                           </button>
                         )}
-                        <button onClick={() => sendWhatsApp(student, selectedMonth)} style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(37,211,102,0.1)', border: '0.5px solid rgba(37,211,102,0.25)', color: '#25D366', fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {authUser?.role === 'admin' && <button onClick={() => sendWhatsApp(student, selectedMonth)} style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: 'rgba(37,211,102,0.1)', border: '0.5px solid rgba(37,211,102,0.25)', color: '#25D366', fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           💬 Remind
-                        </button>
+                        </button>}
                       </div>
                     </td>
                   </tr>

@@ -47,10 +47,13 @@ export function userValues(
     values[k] = v
   }
   if (has('disabled')) values.disabled = Boolean(body.disabled)
+  if (has('can_view_payments')) values.can_view_payments = body.can_view_payments === true
 
   const role = (values.role as Role | undefined) ?? currentRole
   if (role === 'admin') { values.team_id = null; values.student_id = null }
   if (role === 'coach') values.student_id = null
+  // Only coaches need the flag (admins always have access; families never do).
+  if (role !== 'coach' && has('can_view_payments')) values.can_view_payments = false
   if (role === 'parent' || role === 'student') values.team_id = null
 
   return { values }

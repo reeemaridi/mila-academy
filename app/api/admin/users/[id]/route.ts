@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { readJson, dbError, badRequest, unauthorized, notFound } from '@/lib/api-fields'
-import { PUBLIC_USER_COLUMNS, findUserById, countActiveAdmins } from '@/lib/server/users'
+import { toPublic, findUserById, countActiveAdmins, type UserRecord } from '@/lib/server/users'
 import { userValues, isDuplicateEmail } from '../validate'
 import { removeOwnerDocuments } from '@/lib/server/documents'
 
@@ -45,13 +45,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .from('app_users')
     .update(values)
     .eq('id', id)
-    .select(PUBLIC_USER_COLUMNS)
+    .select('*')
     .maybeSingle()
 
   if (isDuplicateEmail(error)) return conflict('A user with this email already exists')
   if (error) return dbError('users.update', error)
   if (!data) return notFound('User not found')
-  return NextResponse.json({ data })
+  return NextResponse.json({ data: toPublic(data as UserRecord) })
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

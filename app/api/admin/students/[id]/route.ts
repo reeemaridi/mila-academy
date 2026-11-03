@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, notFound } from '@/lib/api-fields'
+import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, notFound, stripPayments } from '@/lib/api-fields'
 import { removeOwnerDocuments } from '@/lib/server/documents'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (session.role === 'coach') {
     const ok = session.teamId ? data.team_id === session.teamId : session.academies.includes(data.academy)
     if (!ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!session.user.can_view_payments) return NextResponse.json({ data: stripPayments(data) })
   }
   return NextResponse.json({ data })
 }

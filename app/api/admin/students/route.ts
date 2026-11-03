@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized } from '@/lib/api-fields'
+import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, stripPayments } from '@/lib/api-fields'
 import { hashPassword, passwordProblem } from '@/lib/server/passwords'
-import { PUBLIC_USER_COLUMNS, findUserByEmail, isValidEmail, normalizeEmail } from '@/lib/server/users'
+import { toPublic, findUserByEmail, isValidEmail, normalizeEmail, type UserRecord } from '@/lib/server/users'
 import { temporaryPassword, isDuplicateEmail } from '../users/validate'
 
 // ?includeArchived=1 to also return archived students (default: active only)
@@ -24,7 +24,9 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query
   if (error) return dbError('students.list', error)
-  return NextResponse.json({ data })
+  // A coach without the payments permission never receives money fields.
+  const hidePayments = session.role === 'coach' && !session.user.can_view_payments
+  return NextResponse.json({ data: hidePayments ? (data ?? []).map(stripPayments) : data })
 }
 
 // Admin only. Optional `account: { email, role: 'parent' | 'student', password? }`
@@ -82,7 +84,7 @@ export async function POST(req: NextRequest) {
       password_hash: await hashPassword(account.password),
       must_change_password: true,
     })
-    .select(PUBLIC_USER_COLUMNS)
+    .select('*')
     .single()
 
   if (userError) {
@@ -93,5 +95,5 @@ export async function POST(req: NextRequest) {
     }
     return dbError('students.create-account', userError)
   }
-  return NextResponse.json({ data, user, temporaryPassword: account.password }, { status: 201 })
+  return NextResponse.json({ data, user: toPublic(user as UserRecord), temporaryPassword: account.password }, { status: 201 })
 }

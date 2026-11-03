@@ -667,7 +667,7 @@ export default function StudentDetailPage() {
   const TABS = ALL_TABS.filter(t =>
     t.key === 'documents'
       ? role !== 'coach'
-      : t.key !== 'payments' || (role !== 'coach' && role !== 'student')
+      : t.key !== 'payments' || (role === 'coach' ? !!authUser?.canViewPayments : role !== 'student')
   )
 
   useEffect(() => {
