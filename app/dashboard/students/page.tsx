@@ -11,6 +11,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { useSelectedAcademy } from '@/lib/use-session'
 import { fetchStudents, fetchTeams, createStudent, archiveStudent, deleteStudent, type TeamRow } from './api'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
+import { ENQUIRY_PREFILL_KEY, type EnquiryPrefill } from './enquiry-prefill'
 import { confirmAction } from '../components/admin-ui'
 import { toast } from '../components/toast'
 
@@ -285,14 +286,28 @@ function SelectField({
 
 function AddStudentModal({
   teams,
+  prefill,
   onClose,
   onAdd,
 }: {
   teams: TeamRow[]
+  /** an enquiry from the website to start from, if the admin came from Inquiries */
+  prefill?: EnquiryPrefill | null
   onClose: () => void
   onAdd: (s: StudentRow) => void
 }) {
-  const [form, setForm]     = useState(() => ({ ...EMPTY_FORM }))
+  const [form, setForm]     = useState(() => prefill
+    ? {
+        ...EMPTY_FORM,
+        academy: prefill.academy,
+        parent_name: prefill.contactName,
+        parent_phone: prefill.phone,
+        parent_whatsapp: prefill.phone.replace(/\D/g, ''),
+        login_email: prefill.email,
+        notes: [prefill.childAge != null ? `Age ${prefill.childAge} when enquiring.` : '', prefill.message].filter(Boolean).join(' '),
+      }
+    : { ...EMPTY_FORM })
+  const teamChoices = prefill ? teams.filter(t => t.academy === prefill.academy) : teams
   const [section, setSection] = useState<'basic' | 'parent' | 'medical' | 'payment' | 'login'>('basic')
   const [created, setCreated] = useState<{ student: StudentRow; login?: { email: string; password: string } } | null>(null)
   const [saving, setSaving] = useState(false)
@@ -328,6 +343,10 @@ function AddStudentModal({
         account: form.create_login ? { email: form.login_email, role: form.login_role } : undefined,
       })
       onAdd(result.student)
+      if (prefill) {
+        // Best effort: the student exists either way.
+        fetch(`/api/admin/inquiries/${prefill.inquiryId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ handled: true }) }).catch(() => {})
+      }
       if (result.login) setCreated(result)
       else onClose()
     } catch (err) {
@@ -369,6 +388,11 @@ function AddStudentModal({
           </button>
         </div>
 
+        {prefill && !created && (
+          <div style={{ margin: '14px 24px 0', padding: '10px 12px', borderRadius: 8, fontSize: 12, lineHeight: 1.5, backgroundColor: 'rgba(245,197,24,0.1)', border: '1px solid rgba(245,197,24,0.3)', color: 'var(--text-secondary)' }}>
+            Filled in from the enquiry by <strong style={{ color: 'var(--text-primary)' }}>{prefill.contactName}</strong>{prefill.childAge != null ? ` (child aged ${prefill.childAge})` : ''}. Enter the child’s <strong>name and date of birth</strong>, pick a team, and check the Parent and Login tabs. The enquiry is marked handled when you save.
+          </div>
+        )}
         {created?.login ? (
           <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
@@ -426,7 +450,7 @@ function AddStudentModal({
                   const acad = teams.find(t => t.id === v)?.academy ?? 'MFA'
                   setForm(p => ({ ...p, team_id: v, academy: acad }))
                 }}
-                options={[{ value: '', label: 'Select a team…' }, ...teams.map(t => ({ value: t.id, label: t.name }))]}
+                options={[{ value: '', label: 'Select a team…' }, ...teamChoices.map(t => ({ value: t.id, label: t.name }))]}
               />
             </>}
 
@@ -576,6 +600,7 @@ export default function StudentsPage() {
   const [team,     setTeam]             = useState('All')
   const [payment,  setPayment]          = useState<'All' | 'paid' | 'unpaid' | 'partial'>('All')
   const [showModal, setShowModal]       = useState(false)
+  const [prefill, setPrefill]           = useState<EnquiryPrefill | null>(null)
   const isAdmin = getCurrentUser()?.role === 'admin'
 
   useEffect(() => {
@@ -591,6 +616,16 @@ export default function StudentsPage() {
         setAllStudents(visible)
         setTeams(t)
         setLoadError('')
+        // Arrived from Inquiries with an enquiry to turn into a student: open the
+        // Add Student form with it filled in (once).
+        try {
+          const raw = sessionStorage.getItem(ENQUIRY_PREFILL_KEY)
+          if (raw && u?.role === 'admin') {
+            sessionStorage.removeItem(ENQUIRY_PREFILL_KEY)
+            setPrefill(JSON.parse(raw) as EnquiryPrefill)
+            setShowModal(true)
+          }
+        } catch {}
       })
       .catch(err => { if (!cancelled) setLoadError(err instanceof Error ? err.message : 'Failed to load students.') })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -795,7 +830,8 @@ export default function StudentsPage() {
       {showModal && (
         <AddStudentModal
           teams={teams}
-          onClose={() => setShowModal(false)}
+          prefill={prefill}
+          onClose={() => { setShowModal(false); setPrefill(null) }}
           onAdd={s => setAllStudents(p => [...p, s])}
         />
       )}

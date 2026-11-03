@@ -1,7 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { IconTrash, IconCheck, IconArrowBackUp, IconBrandWhatsapp, IconMail, IconPhone } from '@tabler/icons-react'
+import { useRouter } from 'next/navigation'
+import { IconTrash, IconCheck, IconArrowBackUp, IconBrandWhatsapp, IconMail, IconPhone, IconUserPlus } from '@tabler/icons-react'
+import { ENQUIRY_PREFILL_KEY, type EnquiryPrefill } from '../../students/enquiry-prefill'
 import { useRequireAccess } from '../../hooks/useRequireAccess'
 import { toast } from '../../components/toast'
 import {
@@ -32,6 +34,7 @@ export default function InquiriesAdminPage() {
   const { data: rows, setData: setRows, loading, error, reload: load } =
     useAdminData<Inquiry[]>('/api/admin/inquiries', !!user, [])
   const [view, setView] = useState<'open' | 'handled' | 'all'>('open')
+  const router = useRouter()
 
 
   const shown = useMemo(
@@ -48,6 +51,22 @@ export default function InquiriesAdminPage() {
       toast(e instanceof Error ? e.message : 'Update failed', 'error')
       load()
     }
+  }
+
+  // Hand the enquiry to the Add Student form (opened on the Students page) so
+  // nothing has to be retyped.
+  function createStudent(r: Inquiry) {
+    const prefill: EnquiryPrefill = {
+      inquiryId: r.id,
+      contactName: r.name,
+      email: r.email,
+      phone: r.phone,
+      academy: r.academy === 'mba' ? 'MBA' : 'MFA',
+      childAge: r.child_age,
+      message: r.message ?? '',
+    }
+    try { sessionStorage.setItem(ENQUIRY_PREFILL_KEY, JSON.stringify(prefill)) } catch {}
+    router.push('/dashboard/students')
   }
 
   async function remove(r: Inquiry) {
@@ -114,9 +133,10 @@ export default function InquiriesAdminPage() {
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                    {!r.handled && <Button onClick={() => createStudent(r)} title="Open the Add Student form with this enquiry filled in"><IconUserPlus size={14} /> Create student</Button>}
                     {r.handled
                       ? <Button variant="secondary" onClick={() => setHandled(r, false)}><IconArrowBackUp size={14} /> Reopen</Button>
-                      : <Button onClick={() => setHandled(r, true)}><IconCheck size={14} /> Mark handled</Button>}
+                      : <Button variant="secondary" onClick={() => setHandled(r, true)}><IconCheck size={14} /> Mark handled</Button>}
                     <Button variant="danger" onClick={() => remove(r)} title="Delete"><IconTrash size={14} /></Button>
                   </div>
                 </div>
