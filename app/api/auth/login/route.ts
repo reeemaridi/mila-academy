@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { setSessionCookie } from '@/lib/api-auth'
 import { readJson, badRequest } from '@/lib/api-fields'
@@ -67,10 +67,14 @@ export async function POST(req: NextRequest) {
 
   keys.forEach(k => failures.delete(k))
   await setSessionCookie(user)
-  await getSupabaseAdmin()
-    .from('app_users')
-    .update({ last_login_at: new Date().toISOString() })
-    .eq('id', user.id)
+  // Recorded after the response is sent: it is bookkeeping, and awaiting it
+  // added a full database round trip to every sign-in.
+  after(async () => {
+    await getSupabaseAdmin()
+      .from('app_users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', user.id)
+  })
 
   return NextResponse.json({ user: sessionUserFor(user) })
 }

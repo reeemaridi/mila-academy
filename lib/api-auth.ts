@@ -19,6 +19,25 @@ export interface ApiSession {
   user: UserRecord
 }
 
+// Every API request used to read the user row before doing anything else, a
+// full database round trip on top of the request's own queries. A short cache
+// removes that wait on page-to-page navigation. The trade-off is that disabling
+// an account or changing its role can take up to USER_CACHE_MS to reach a
+// server instance that has the old row cached. A cached row whose session
+// version differs from the cookie's is never trusted: it is re-read, so a
+// password change (which re-issues the cookie) takes effect at once.
+const USER_CACHE_MS = 10_000
+const userCache = new Map<string, { user: UserRecord | null; at: number }>()
+
+async function cachedUser(id: string, ver: number): Promise<UserRecord | null> {
+  const hit = userCache.get(id)
+  if (hit && Date.now() - hit.at < USER_CACHE_MS && hit.user && hit.user.session_version === ver) return hit.user
+  const user = await findUserById(id)
+  userCache.set(id, { user, at: Date.now() })
+  if (userCache.size > 500) userCache.clear()
+  return user
+}
+
 /**
  * The signed-in user, or null.
  *
@@ -34,7 +53,7 @@ export const getSession = cache(async (): Promise<ApiSession | null> => {
 
   let user: UserRecord | null
   try {
-    user = await findUserById(payload.uid)
+    user = await cachedUser(payload.uid, payload.ver)
   } catch (err) {
     // Fail closed: if the database can't confirm the account, nobody is signed in.
     console.error('[api-auth] session lookup failed:', err instanceof Error ? err.message : err)
