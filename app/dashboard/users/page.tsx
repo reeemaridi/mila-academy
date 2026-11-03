@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  IconPlus, IconPencil, IconTrash, IconKey, IconCopy, IconSearch, IconLock, IconLockOpen, IconFolder,
+  IconPlus, IconPencil, IconTrash, IconKey, IconCopy, IconSearch, IconLock, IconLockOpen, IconFolder, IconDownload,
 } from '@tabler/icons-react'
 import { useRequireAccess } from '../hooks/useRequireAccess'
 import { refreshSession } from '@/lib/auth'
@@ -315,6 +315,30 @@ export default function UsersAdminPage() {
     }
   }
 
+  // The sign-in sheet: a spreadsheet (CSV, opens in Excel) with every coach,
+  // parent and student account. Accounts whose owner has not chosen a password
+  // yet get a fresh temporary one; the rest are listed as private.
+  async function downloadSignInSheet() {
+    if (!confirmAction('Download the sign-in sheet?\n\nEvery account that has not yet chosen its own password gets a NEW temporary password (the one shown when it was created stops working). Accounts that already chose a password are listed but not changed.\n\nThe file contains passwords: share it privately and delete it afterwards.')) return
+    try {
+      const { rows, resetCount } = await api<{ rows: { name: string; role: string; email: string; linked: string; password: string; note: string }[]; resetCount: number }>('/api/admin/users/credentials', { method: 'POST' })
+      const esc = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`
+      const head = ['Name', 'Role', 'Email (sign-in)', 'Student / teams', 'Password', 'Note']
+      const lines = [head, ...rows.map(r => [r.name, r.role, r.email, r.linked, r.password, r.note])].map(r => r.map(esc).join(','))
+      const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `mila-sign-in-sheet-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast(`Sheet downloaded: ${rows.length} people, ${resetCount} new temporary passwords`, 'success')
+      load()
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not build the sheet', 'error')
+    }
+  }
+
   function onPasswordSet(creds: { email: string; password: string }) {
     setUsers(list => list.map(x => (x.email === creds.email ? { ...x, must_change_password: true } : x)))
     setReveal(creds)
@@ -340,7 +364,10 @@ export default function UsersAdminPage() {
       <PageHeader
         title="Users"
         subtitle="Everyone who can sign in to the dashboard. Add staff and families, choose what they can see, reset passwords, or disable access."
-        actions={<Button onClick={() => setEditing('new')}><IconPlus size={15} /> Add user</Button>}
+        actions={<div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button variant="secondary" onClick={downloadSignInSheet} title="Spreadsheet of every coach, parent and student sign-in"><IconDownload size={15} /> Sign-in sheet</Button>
+          <Button onClick={() => setEditing('new')}><IconPlus size={15} /> Add user</Button>
+        </div>}
       />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>

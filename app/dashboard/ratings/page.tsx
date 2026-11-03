@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { IconStar, IconUsers, IconX, IconCheck } from '@tabler/icons-react'
 import { TEAMS, loadAllStudents, generateRatings, teamName, type StudentRow, type RatingEntry } from '../students/data'
+import { useRoster } from '../hooks/useRoster'
 import { toast } from '../components/toast'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
 import { getCurrentUser } from '@/lib/auth'
@@ -287,6 +288,7 @@ export default function RatingsPage() {
   const [loading,     setLoading]     = useState(true)
   const [showModal,   setShowModal]   = useState(false)
   const [coachName,   setCoachName]   = useState('Coach')
+  const rosterVersion = useRoster()
 
   useEffect(() => {
     setTimeout(() => {
@@ -305,7 +307,7 @@ export default function RatingsPage() {
       }
       setLoading(false)
     }, 400)
-  }, [])
+  }, [rosterVersion])
 
   const teamStudents = useMemo(() => students.filter(s => s.team_id === teamId), [students, teamId])
 

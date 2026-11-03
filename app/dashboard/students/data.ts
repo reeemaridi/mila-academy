@@ -66,10 +66,18 @@ export interface PaymentEntry {
 
 // ── Teams ──────────────────────────────────────────────────────────────────────
 
-// Teams and students now come from the database (/api/admin/teams and
-// /api/admin/students); these stay as empty lists for the screens that have not
-// been moved over yet.
+// The real teams and students, filled in by setRoster() once the dashboard has
+// fetched them (see hooks/useRoster.ts). These are the lists the Attendance,
+// Ratings, Payments, Matches and Reports screens read. TEAMS is updated in
+// place so every module that imported it sees the new contents.
 export const TEAMS: Team[] = []
+let realStudents: StudentRow[] = []
+
+export function setRoster(teams: Team[], students: StudentRow[]): void {
+  TEAMS.length = 0
+  TEAMS.push(...teams)
+  realStudents = students
+}
 
 export function teamName(id: string) {
   return TEAMS.find((t) => t.id === id)?.name ?? id
@@ -112,11 +120,12 @@ export function generatePayments(_id: string, _currentStatus: StudentRow['paymen
 export function loadAllStudents(): StudentRow[] {
   // Students staff added themselves (kept in this browser by older versions of
   // the dashboard) are always kept.
-  if (typeof window === 'undefined') return BASE_STUDENTS
+  if (typeof window === 'undefined') return [...BASE_STUDENTS, ...realStudents]
   try {
     const added = JSON.parse(localStorage.getItem('mila_students_added') ?? '[]') as StudentRow[]
-    return [...BASE_STUDENTS, ...added]
+    const known = new Set(realStudents.map(s => s.id))
+    return [...BASE_STUDENTS, ...realStudents, ...added.filter(s => !known.has(s.id))]
   } catch {
-    return BASE_STUDENTS
+    return [...BASE_STUDENTS, ...realStudents]
   }
 }

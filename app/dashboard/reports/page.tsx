@@ -1,5 +1,6 @@
 'use client'
 
+import { useRoster } from '../hooks/useRoster'
 import { useState } from 'react'
 import { IconChartBar, IconCheck } from '@tabler/icons-react'
 import {
@@ -236,6 +237,7 @@ const REPORTS: ReportDef[] = [
 
 export default function ReportsPage() {
   const { user: authUser, loading: authLoading } = useRequireAccess('reports')
+  useRoster() // loads the real teams and students the reports are built from
   const [loading, setLoading] = useState<Record<number, boolean>>({})
   const [done,    setDone]    = useState<Record<number, boolean>>({})
 

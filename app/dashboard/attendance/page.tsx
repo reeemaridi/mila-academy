@@ -7,6 +7,7 @@ import {
   IconUsers,
 } from '@tabler/icons-react'
 import { TEAMS, loadAllStudents, teamName, type StudentRow } from '../students/data'
+import { useRoster } from '../hooks/useRoster'
 import { hasAccess } from '@/lib/auth'
 import { useSession, useSelectedAcademy, useHydrated } from '@/lib/use-session'
 import { useRequireAccess } from '../hooks/useRequireAccess'
@@ -142,15 +143,18 @@ export default function AttendancePage() {
   // Recomputed per render rather than frozen in a useState initialiser, which
   // ran before the session was known and so never applied the coach/parent
   // narrowing on the prerendered markup.
+  const rosterVersion = useRoster()
   const allStudents = useMemo<StudentRow[]>(() => {
     const all = loadAllStudents()
     if (!session) return all
-    if (session.role === 'coach' && session.teamId) return all.filter(s => s.team_id === session.teamId)
+    // A coach's list is already limited to their teams by the server.
     if (session.role === 'parent' || session.role === 'student') {
       return all.filter(s => String(s.id) === String(session.studentId))
     }
     return all
-  }, [session])
+  // rosterVersion changes when the real teams/students arrive.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, rosterVersion])
 
   // Switching academy clears the in-progress sheet, which belongs to the team
   // that is about to stop being visible. Adjusted during render (React's
@@ -177,8 +181,10 @@ export default function AttendancePage() {
 
   // ── Derived data ─────────────────────────────────────────────────────────
   const visibleTeams = useMemo(
-    () => selectedAcademy === 'Both' ? TEAMS : TEAMS.filter(t => t.academy === selectedAcademy),
-    [selectedAcademy]
+    () => selectedAcademy === 'Both' ? [...TEAMS] : TEAMS.filter(t => t.academy === selectedAcademy),
+    // rosterVersion changes when the real teams arrive (TEAMS is updated in place).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedAcademy, rosterVersion]
   )
 
   const teamStudents = useMemo(

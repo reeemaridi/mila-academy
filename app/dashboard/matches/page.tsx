@@ -6,6 +6,7 @@ import {
   IconTrophy, IconChevronDown, IconChevronUp, IconUsers, IconX,
 } from '@tabler/icons-react'
 import { TEAMS, loadAllStudents, type StudentRow } from '../students/data'
+import { useRoster } from '../hooks/useRoster'
 import { useSelectedAcademy } from '@/lib/use-session'
 import { DUMMY_MATCHES, type MatchRecord, type Scorer } from './data'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
@@ -867,7 +868,9 @@ export default function MatchesPage() {
       return DUMMY_MATCHES
     }
   })
-  const [students] = useState<StudentRow[]>(() => loadAllStudents())
+  const rosterVersion = useRoster()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const students = useMemo<StudentRow[]>(() => loadAllStudents(), [rosterVersion])
 
   // Modals
   const [showSchedule,    setShowSchedule]    = useState(false)

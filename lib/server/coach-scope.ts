@@ -28,7 +28,7 @@ export async function coachTeamIds(session: ApiSession): Promise<string[] | null
   const { data } = await getSupabaseAdmin()
     .from('coaches')
     .select('team_ids')
-    .ilike('email', email.replace(/[\%_]/g, c => `\${c}`))
+    .ilike('email', email.replace(/[\\%_]/g, c => `\\${c}`))
     .is('archived_at', null)
     .limit(1)
     .maybeSingle()

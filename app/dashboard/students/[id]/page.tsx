@@ -15,6 +15,7 @@ import { useSession } from '@/lib/use-session'
 import { fetchStudent, fetchTeams, updateStudent, type TeamRow } from '../api'
 import { toast } from '../../components/toast'
 import DocumentsPanel from '../../components/DocumentsPanel'
+import PaymentLedger from '../../components/PaymentLedger'
 import { useModal, modalOverlayProps } from '../../hooks/useModal'
 
 // ── Shared mini-components ─────────────────────────────────────────────────────
@@ -713,6 +714,14 @@ function PaymentsTab({ student, onChange }: { student: StudentRow; onChange: (s:
         )}
         {!amountOk && canEdit && <p style={{ color: '#f87171', fontSize: 12, margin: '10px 0 0' }}>Enter an amount of 0 or more.</p>}
       </Card>
+
+      <PaymentLedger
+        key={student.id}
+        studentId={student.id}
+        defaultType={student.payment_type ?? 'monthly'}
+        defaultAmount={Number(student.payment_amount ?? 0)}
+        canEdit={canEdit}
+      />
 
       <PaymentHistory student={student} />
     </div>

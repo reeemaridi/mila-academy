@@ -8,6 +8,7 @@ import { useRequireAccess } from '../hooks/useRequireAccess'
 import { useSelectedAcademy, useSession } from '@/lib/use-session'
 import { toast } from '../components/toast'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
+import { useRoster } from '../hooks/useRoster'
 import {
   TEAMS, loadAllStudents, generatePayments, teamName,
   type StudentRow, type PaymentEntry,
@@ -266,7 +267,9 @@ function MarkPaidModal({
 
 export default function PaymentsPage() {
   const { user: authUser, loading: authLoading } = useRequireAccess('payments')
-  const [students]      = useState<StudentRow[]>(() => loadAllStudents())
+  const rosterVersion = useRoster()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const students = useMemo<StudentRow[]>(() => loadAllStudents(), [rosterVersion])
   const [overrides,     setOverrides]     = useState<PaymentOverride>(() => {
     try {
       return JSON.parse(localStorage.getItem('mila_payment_overrides') ?? '{}')
