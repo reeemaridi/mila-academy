@@ -5,7 +5,7 @@
 // migration; only the student *record* itself (name, contact info, team,
 // etc.) is real now.
 import type { StudentRow } from './data'
-import { logout, isAuthPage } from '@/lib/auth'
+import { handleUnauthorized } from '@/lib/auth'
 
 export interface TeamRow {
   id: string
@@ -34,13 +34,7 @@ function toStudentRow(s: ApiStudent): StudentRow {
 
 async function json(res: Response) {
   const body = await res.json().catch(() => ({}))
-  if (res.status === 401 && typeof window !== 'undefined' && !isAuthPage()) {
-    // The stored sign-in is stale (account removed, password changed elsewhere,
-    // or the cookie expired): clear it and send the user to sign in again
-    // instead of leaving the page on a raw "Unauthorized" error.
-    void logout().finally(() => { window.location.href = '/dashboard/login' })
-    throw new Error('Your session has ended — sign in again.')
-  }
+  if (res.status === 401) throw new Error(await handleUnauthorized())
   if (!res.ok) throw new Error(body?.error ?? `Request failed (${res.status})`)
   return body
 }

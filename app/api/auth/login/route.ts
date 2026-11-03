@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { setSessionCookie } from '@/lib/api-auth'
 import { readJson, badRequest } from '@/lib/api-fields'
 import { verifyPassword, getDummyHash } from '@/lib/server/passwords'
-import { findUserByEmail, sessionUserFor } from '@/lib/server/users'
+import { findUserByEmail, isValidEmail, sessionUserFor } from '@/lib/server/users'
 
 // Brute-force brake: after MAX_FAILURES wrong passwords for one email (or from
 // one address) inside WINDOW_MS, further attempts are refused until the window
@@ -43,6 +43,15 @@ export async function POST(req: NextRequest) {
       { error: 'Too many failed attempts. Try again in 15 minutes.' },
       { status: 429 },
     )
+  }
+
+  // Not an email address at all: answer exactly like a wrong password without
+  // sending it to the database (Supabase's firewall rejects SQL-looking text with
+  // an HTML error page, which would otherwise surface as "database unreachable").
+  if (!isValidEmail(email)) {
+    await verifyPassword(password, await getDummyHash())
+    keys.forEach(recordFailure)
+    return invalid()
   }
 
   let user

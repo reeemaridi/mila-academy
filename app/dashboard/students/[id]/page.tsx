@@ -669,7 +669,7 @@ export default function StudentDetailPage() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([fetchStudent(params.id), fetchTeams()])
+    Promise.all([fetchStudent(params.id), fetchTeams().catch((): TeamRow[] => [])])
       .then(([s, t]) => { if (!cancelled) { setStudent(s); setTeams(t) } })
       .catch(() => { if (!cancelled) setStudent(null) })
       .finally(() => { if (!cancelled) setLoadedId(params.id) })

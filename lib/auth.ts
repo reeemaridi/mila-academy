@@ -196,3 +196,22 @@ export function hasAccess(resource: Resource, action: Action, user: SessionUser)
 export function isAuthPage(): boolean {
   return /^\/dashboard\/(login|forgot-password|reset-password)/.test(window.location.pathname)
 }
+
+/**
+ * Called when an API request answers 401. That code is used both for "not signed
+ * in" and for "signed in but not allowed", so confirm with the session endpoint
+ * before signing anyone out. Returns the message to show.
+ */
+export async function handleUnauthorized(): Promise<string> {
+  const ended = 'Your session has ended — sign in again.'
+  if (typeof window === 'undefined' || isAuthPage()) return ended
+  try {
+    const res = await fetch('/api/auth/me', { cache: 'no-store' })
+    if (res.status !== 401) return 'You do not have permission to do that.'
+  } catch {
+    return 'Could not reach the server. Try again.'
+  }
+  await logout()
+  window.location.href = '/dashboard/login'
+  return ended
+}
