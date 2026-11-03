@@ -3,6 +3,7 @@ import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { STUDENT_FIELDS, PAYMENT_FIELDS, paymentProblem, pick, readJson, dbError, badRequest, unauthorized, notFound, stripPayments } from '@/lib/api-fields'
 import { removeOwnerDocuments } from '@/lib/server/documents'
+import { coachTeamIds, inCoachScope } from '@/lib/server/coach-scope'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession()
@@ -24,7 +25,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (error) return dbError('students.get', error)
   if (!data) return notFound('Student not found')
   if (session.role === 'coach') {
-    const ok = session.teamId ? data.team_id === session.teamId : session.academies.includes(data.academy)
+    const ok = inCoachScope(await coachTeamIds(session), session, data)
     if (!ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (!session.user.can_view_payments) return NextResponse.json({ data: stripPayments(data) })
   }
@@ -57,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!isAdmin) {
     const { data: s } = await getSupabaseAdmin().from('students').select('team_id, academy').eq('id', id).maybeSingle()
     if (!s) return notFound('Student not found')
-    const inScope = session.teamId ? s.team_id === session.teamId : session.academies.includes(s.academy)
+    const inScope = inCoachScope(await coachTeamIds(session), session, s)
     if (!inScope) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

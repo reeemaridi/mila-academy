@@ -3,6 +3,7 @@ import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, stripPayments } from '@/lib/api-fields'
 import { hashPassword, passwordProblem } from '@/lib/server/passwords'
+import { coachTeamIds } from '@/lib/server/coach-scope'
 import { toPublic, findUserByEmail, isValidEmail, normalizeEmail, type UserRecord } from '@/lib/server/users'
 import { temporaryPassword, isDuplicateEmail } from '../users/validate'
 
@@ -19,7 +20,9 @@ export async function GET(req: NextRequest) {
   // A coach only sees their own team's players (or their academy's, if no
   // team is assigned yet) — enforced here, not just in the UI.
   if (session.role === 'coach') {
-    query = session.teamId ? query.eq('team_id', session.teamId) : query.in('academy', session.academies)
+    // The coach's teams come from their profile (see lib/server/coach-scope.ts).
+    const ids = await coachTeamIds(session)
+    query = ids ? query.in('team_id', ids) : query.in('academy', session.academies)
   }
 
   const { data, error } = await query

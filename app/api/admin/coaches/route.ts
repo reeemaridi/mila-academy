@@ -3,6 +3,7 @@ import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { COACH_FIELDS, pick, readJson, dbError, badRequest, unauthorized } from '@/lib/api-fields'
 import { createCoachLogin, checkLoginEmail } from '@/lib/server/coach-account'
+import { clearCoachScopeCache } from '@/lib/server/coach-scope'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -57,5 +58,6 @@ export async function POST(req: NextRequest) {
     await db.from('coaches').delete().eq('id', data.id)
     return NextResponse.json({ error: login.error }, { status: login.status })
   }
+  clearCoachScopeCache()
   return NextResponse.json({ data: { ...data, has_login: true }, user: login.user, temporaryPassword: login.temporaryPassword }, { status: 201 })
 }

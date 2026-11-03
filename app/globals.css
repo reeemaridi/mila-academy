@@ -178,6 +178,7 @@ html {
   width: 260px;
   min-width: 260px;
   height: 100vh;
+  height: 100dvh; /* tracks a collapsing mobile address bar so the last links stay reachable */
   position: fixed;
   top: 0;
   left: 0;
@@ -372,4 +373,23 @@ html {
   0%   { opacity: 1; }
   50%  { opacity: 0.4; }
   100% { opacity: 1; }
+}
+
+/* ── Dashboard scrolling fixes ───────────────────────────────────────────────
+   - scrollbar-gutter: opening a dialog locks the page scroll, which removes the
+     scrollbar and used to shift the whole layout sideways by its width.
+   - scroll-padding-top: the header is fixed, so a field focused with Tab or
+     scrolled into view slid underneath it.
+   - overscroll-behavior: contain: reaching the end of the sidebar list or of a
+     dialog no longer hands the wheel to the page behind it. */
+html {
+  scrollbar-gutter: stable;
+  scroll-padding-top: 84px;
+}
+.dash-sidebar nav,
+[role="dialog"] {
+  overscroll-behavior: contain;
+}
+[role="dialog"] > div {
+  overscroll-behavior: contain;
 }

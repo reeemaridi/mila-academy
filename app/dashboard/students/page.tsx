@@ -611,7 +611,9 @@ export default function StudentsPage() {
         const u = getCurrentUser()
         let visible = s
         if (u?.role === 'coach') {
-          visible = u.teamId ? s.filter(x => x.team_id === u.teamId) : s.filter(x => u.academies.includes(x.academy))
+          // The server already limits a coach to their teams; this just keeps the
+          // list within the academies they work in.
+          visible = s.filter(x => u.academies.includes(x.academy))
         }
         setAllStudents(visible)
         setTeams(t)

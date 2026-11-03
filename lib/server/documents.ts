@@ -1,6 +1,7 @@
 import 'server-only'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import type { ApiSession } from '@/lib/api-auth'
+import { coachTeamIds, inCoachScope } from '@/lib/server/coach-scope'
 
 // Photos and legal papers for students and for staff accounts. Files live in a
 // private storage bucket and are only ever served through /api/documents, which
@@ -88,7 +89,7 @@ export async function coachCanSeePhoto(session: ApiSession, doc: DocumentRow): P
   if (session.role !== 'coach' || doc.doc_type !== 'photo' || doc.owner_type !== 'student') return false
   const { data } = await getSupabaseAdmin().from('students').select('team_id, academy').eq('id', doc.owner_id).maybeSingle()
   if (!data) return false
-  return session.teamId ? data.team_id === session.teamId : session.academies.includes(data.academy)
+  return inCoachScope(await coachTeamIds(session), session, data)
 }
 
 export async function ownerExists(ownerType: OwnerType, ownerId: string): Promise<boolean> {
