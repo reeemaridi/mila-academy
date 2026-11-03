@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, requireRole } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { STUDENT_FIELDS, pick, readJson, dbError, badRequest, unauthorized, notFound, stripPayments } from '@/lib/api-fields'
+import { STUDENT_FIELDS, PAYMENT_FIELDS, paymentProblem, pick, readJson, dbError, badRequest, unauthorized, notFound, stripPayments } from '@/lib/api-fields'
 import { removeOwnerDocuments } from '@/lib/server/documents'
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,16 +33,33 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
 // Also used to archive/restore — pass { archived_at: <ISO string> } to archive,
 // or { archived_at: null } to restore.
+// Admins may change any field. A coach an administrator allowed to handle
+// payments (can_view_payments) may change only the payment fields, and only on
+// students in their own team.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await requireRole('admin'))) return unauthorized()
+  const session = await getSession()
+  if (!session) return unauthorized()
+  const isAdmin = session.role === 'admin'
+  const isPaymentsCoach = session.role === 'coach' && !!session.user.can_view_payments
+  if (!isAdmin && !isPaymentsCoach) return unauthorized()
 
   const { id } = await params
   const body = await readJson(req)
   if (!body) return badRequest('Invalid JSON body')
 
   // Whitelisted — an unfiltered update let a caller rewrite `id` or `created_at`.
-  const values = pick(body, STUDENT_FIELDS)
-  if (Object.keys(values).length === 0) return badRequest('No updatable fields provided')
+  const values = pick(body, isAdmin ? STUDENT_FIELDS : PAYMENT_FIELDS)
+  if (Object.keys(values).length === 0) return badRequest(isAdmin ? 'No updatable fields provided' : 'You can only change payment details')
+
+  const problem = paymentProblem(values)
+  if (problem) return badRequest(problem)
+
+  if (!isAdmin) {
+    const { data: s } = await getSupabaseAdmin().from('students').select('team_id, academy').eq('id', id).maybeSingle()
+    if (!s) return notFound('Student not found')
+    const inScope = session.teamId ? s.team_id === session.teamId : session.academies.includes(s.academy)
+    if (!inScope) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { data, error } = await getSupabaseAdmin()
     .from('students').update(values).eq('id', id).select().maybeSingle()

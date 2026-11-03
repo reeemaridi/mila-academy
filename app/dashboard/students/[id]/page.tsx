@@ -12,7 +12,8 @@ import {
   type StudentRow, type RatingEntry, type PaymentEntry,
 } from '../data'
 import { useSession } from '@/lib/use-session'
-import { fetchStudent, fetchTeams, type TeamRow } from '../api'
+import { fetchStudent, fetchTeams, updateStudent, type TeamRow } from '../api'
+import { toast } from '../../components/toast'
 import DocumentsPanel from '../../components/DocumentsPanel'
 import { useModal, modalOverlayProps } from '../../hooks/useModal'
 
@@ -539,9 +540,11 @@ function AttendanceTab({ student }: { student: StudentRow }) {
   )
 }
 
-function PaymentsTab({ student }: { student: StudentRow }) {
+// Month-by-month entries staff saved in this browser (older versions of the
+// dashboard); hidden when there are none.
+function PaymentHistory({ student }: { student: StudentRow }) {
   const { user: me } = useSession()
-  const canEditPayments = me?.role === 'admin'
+  const canEditPayments = me?.role === 'admin' || (me?.role === 'coach' && !!me.canViewPayments)
   const storageKey = `mila_payments_${student.id}`
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
     try {
@@ -565,6 +568,8 @@ function PaymentsTab({ student }: { student: StudentRow }) {
   }
 
   const totalPaid = payments.filter(p => p.status === 'paid').reduce((s, p) => s + p.amount, 0)
+
+  if (payments.length === 0) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -630,6 +635,90 @@ function PaymentsTab({ student }: { student: StudentRow }) {
     </div>
   )
 }
+
+function PaymentsTab({ student, onChange }: { student: StudentRow; onChange: (s: StudentRow) => void }) {
+  const { user: me } = useSession()
+  const canEdit = me?.role === 'admin' || (me?.role === 'coach' && !!me.canViewPayments)
+  const [status, setStatus] = useState<StudentRow['payment_status']>(student.payment_status)
+  const [amount, setAmount] = useState(String(student.payment_amount ?? 0))
+  const [type, setType] = useState<'monthly' | 'per_session'>(student.payment_type ?? 'monthly')
+  const [saving, setSaving] = useState(false)
+
+  const amountNum = Number(amount)
+  const amountOk = amount.trim() !== '' && Number.isFinite(amountNum) && amountNum >= 0
+  const dirty = status !== student.payment_status || amountNum !== Number(student.payment_amount ?? 0) || type !== (student.payment_type ?? 'monthly')
+
+  async function save() {
+    if (!amountOk) return
+    setSaving(true)
+    try {
+      const updated = await updateStudent(student.id, { payment_status: status, payment_amount: amountNum, payment_type: type })
+      onChange(updated)
+      toast('Payment updated', 'success')
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Could not save', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const pay = PAY_STYLE[student.payment_status] ?? PAY_STYLE.unpaid
+  const field = { width: '100%', padding: '10px 12px', boxSizing: 'border-box' as const, backgroundColor: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)', fontSize: 14, outline: 'none' }
+  const label = { color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' as const, display: 'block', marginBottom: 6 }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <Card style={{ padding: 20 }}>
+        <p style={{ color: '#f5c518', fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 14px' }}>
+          <IconCreditCard size={13} style={{ verticalAlign: 'middle', marginRight: 6 }} />Current payment
+        </p>
+        {canEdit ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, alignItems: 'end' }}>
+            <div>
+              <label style={label} htmlFor="pay-status">Status</label>
+              <select id="pay-status" value={status} onChange={e => setStatus(e.target.value as typeof status)} style={field}>
+                <option value="paid">Paid</option>
+                <option value="unpaid">Not paid</option>
+                <option value="partial">Partly paid</option>
+              </select>
+            </div>
+            <div>
+              <label style={label} htmlFor="pay-amount">Amount ($)</label>
+              <input id="pay-amount" type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} style={field} />
+            </div>
+            <div>
+              <label style={label} htmlFor="pay-type">Billing</label>
+              <select id="pay-type" value={type} onChange={e => setType(e.target.value as typeof type)} style={field}>
+                <option value="monthly">Monthly</option>
+                <option value="per_session">Per session</option>
+              </select>
+            </div>
+            <button
+              onClick={save}
+              disabled={!dirty || !amountOk || saving}
+              style={{
+                height: 42, borderRadius: 8, border: 'none', backgroundColor: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 700,
+                cursor: !dirty || !amountOk || saving ? 'default' : 'pointer', opacity: !dirty || !amountOk || saving ? 0.5 : 1,
+              }}
+            >
+              {saving ? 'Saving…' : 'Save payment'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Badge label={pay.label} bg={pay.bg} color={pay.color} size={13} />
+            <span style={{ color: 'var(--text-primary)', fontSize: 18, fontWeight: 700 }}>${Number(student.payment_amount ?? 0)}</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{student.payment_type === 'per_session' ? 'Per session' : 'Monthly'}</span>
+          </div>
+        )}
+        {!amountOk && canEdit && <p style={{ color: '#f87171', fontSize: 12, margin: '10px 0 0' }}>Enter an amount of 0 or more.</p>}
+      </Card>
+
+      <PaymentHistory student={student} />
+    </div>
+  )
+}
+
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 
@@ -831,7 +920,7 @@ export default function StudentDetailPage() {
       {tab === 'medical'    && <MedicalTab    key={student.id} student={student} role={role} />}
       {tab === 'ratings'    && <RatingsTab    key={student.id} student={student} />}
       {tab === 'attendance' && <AttendanceTab key={student.id} student={student} />}
-      {tab === 'payments'   && <PaymentsTab   key={student.id} student={student} />}
+      {tab === 'payments'   && <PaymentsTab   key={student.id} student={student} onChange={setStudent} />}
       {tab === 'documents'  && authUser && <DocumentsPanel key={student.id} ownerType="student" ownerId={student.id} meId={authUser.id} isAdmin={role === 'admin'} />}
     </div>
   )

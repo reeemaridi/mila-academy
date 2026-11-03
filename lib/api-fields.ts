@@ -22,6 +22,18 @@ export const STUDENT_FIELDS = [
 /** Money columns of a student record: only admins, and coaches an admin allowed, may read them. */
 export const PAYMENT_FIELDS = ['payment_type', 'payment_status', 'payment_amount', 'payment_due_date'] as const
 
+/** A message if any payment value being written is invalid, else null. */
+export function paymentProblem(v: Record<string, unknown>): string | null {
+  if (Object.hasOwn(v, 'payment_status') && !['paid', 'unpaid', 'partial'].includes(v.payment_status as string)) return 'Status must be paid, unpaid or partial'
+  if (Object.hasOwn(v, 'payment_type') && !['monthly', 'per_session'].includes(v.payment_type as string)) return 'Type must be monthly or per_session'
+  if (Object.hasOwn(v, 'payment_amount')) {
+    const n = v.payment_amount
+    if (typeof n !== 'number' || !Number.isFinite(n) || n < 0 || n > 1_000_000) return 'Amount must be a number from 0 to 1,000,000'
+  }
+  if (Object.hasOwn(v, 'payment_due_date') && v.payment_due_date !== null && !/^d{4}-d{2}-d{2}$/.test(String(v.payment_due_date))) return 'Due date must look like 2026-12-31'
+  return null
+}
+
 export function stripPayments<T extends Record<string, unknown>>(row: T): T {
   const out: Record<string, unknown> = { ...row }
   for (const k of PAYMENT_FIELDS) delete out[k]

@@ -229,9 +229,9 @@ function UserModal({
       )}
       {role === 'coach' && (
         <div>
-          <Toggle label="Can view payments (read-only)" checked={canViewPayments} onChange={setCanViewPayments} />
+          <Toggle label="Can view and update payments" checked={canViewPayments} onChange={setCanViewPayments} />
           <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '6px 0 0', lineHeight: 1.5 }}>
-            Lets this coach see the Payments page and each student’s payment status. They can’t change or mark payments.
+            Lets this coach see payments and mark a student paid, not paid or partly paid, and set the amount. They can’t change anything else about a student.
           </p>
         </div>
       )}
