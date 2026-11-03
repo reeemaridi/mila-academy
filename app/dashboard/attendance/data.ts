@@ -1,3 +1,5 @@
+import { DEMO_DATA } from '@/lib/demo'
+
 // Shared attendance session data — used by the Attendance page itself and by
 // the dashboard home's "Recent Attendance" widget, so both show the same
 // real numbers instead of the home page having its own frozen copy.
@@ -17,7 +19,7 @@ export interface SessionRecord {
 
 // ── Dummy history (pre-seeded sessions, until Attendance has its own
 // Supabase-backed migration) ────────────────────────────────────────────────
-export const DUMMY_SESSIONS: SessionRecord[] = [
+const DEMO_SESSIONS: SessionRecord[] = [
   {
     id: 'ds-1', date: '2026-06-30', team_id: 'mfa-u17', team_name: 'MFA U-17', coach: 'Coach Nader',
     records: { '1': 'present', '2': 'present', '3': 'absent', '4': 'late' },
@@ -79,6 +81,8 @@ export const DUMMY_SESSIONS: SessionRecord[] = [
     saved_at: '2026-06-19T18:00:00',
   },
 ]
+
+export const DUMMY_SESSIONS: SessionRecord[] = DEMO_DATA ? DEMO_SESSIONS : []
 
 export function loadAllSessions(): SessionRecord[] {
   if (typeof window === 'undefined') return DUMMY_SESSIONS

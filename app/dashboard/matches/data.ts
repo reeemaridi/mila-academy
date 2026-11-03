@@ -1,3 +1,5 @@
+import { DEMO_DATA } from '@/lib/demo'
+
 // Shared match data — used by the Matches page itself and by the dashboard
 // home's "Upcoming Matches" widget, so both show the same real numbers
 // instead of the home page having its own frozen copy.
@@ -25,7 +27,7 @@ export interface MatchRecord {
 }
 
 // ── Dummy data (until Matches has its own Supabase-backed migration) ────────
-export const DUMMY_MATCHES: MatchRecord[] = [
+const DEMO_MATCHES: MatchRecord[] = [
   // Upcoming
   {
     id: 'dm-1', team_id: 'mfa-u17', team_name: 'MFA U-17', opponent: 'Al-Nejmeh SC',
@@ -95,6 +97,8 @@ export const DUMMY_MATCHES: MatchRecord[] = [
     live_started_at: '', created_at: '2026-06-01',
   },
 ]
+
+export const DUMMY_MATCHES: MatchRecord[] = DEMO_DATA ? DEMO_MATCHES : []
 
 export function loadAllMatches(): MatchRecord[] {
   if (typeof window === 'undefined') return DUMMY_MATCHES

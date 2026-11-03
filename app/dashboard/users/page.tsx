@@ -346,7 +346,7 @@ export default function UsersAdminPage() {
         </Button>
         {counts.map(([r, n]) => (
           <Button key={r} variant={roleFilter === r ? 'primary' : 'secondary'} onClick={() => setRoleFilter(r)} style={{ minHeight: 32, padding: '6px 12px' }}>
-            {ROLE_INFO[r].label}s ({n})
+            {r === 'coach' ? 'Coaches' : `${ROLE_INFO[r].label}s`} ({n})
           </Button>
         ))}
       </div>

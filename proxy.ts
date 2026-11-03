@@ -14,7 +14,15 @@ export async function proxy(request: NextRequest) {
   // This is a cheap first gate with no database call; each API route still
   // re-checks the account itself via lib/api-auth.ts getSession().
   const session = await verifySession(request.cookies.get(SESSION_COOKIE)?.value)
-  if (session) return NextResponse.next()
+  if (session) {
+    // Signed in with a temporary password: the only thing allowed is choosing a
+    // new one (/api/auth/*, which this proxy does not cover). Enforced here, not
+    // just by the screen that redirects to the password form.
+    if (session.mcp && pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Choose a new password first.' }, { status: 403 })
+    }
+    return NextResponse.next()
+  }
 
   // It answers API calls with JSON — redirecting an API call to an HTML login
   // page would surface to fetch() as an unhelpful parse error.
@@ -26,5 +34,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/api/admin/:path*'],
+  matcher: ['/dashboard/:path*', '/api/admin/:path*', '/api/documents/:path*', '/api/documents'],
 }

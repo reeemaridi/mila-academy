@@ -237,9 +237,14 @@ function OverviewTab({ student, teamDisplayName }: { student: StudentRow; teamDi
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const dob    = new Date(student.dob)
-  const age    = new Date().getFullYear() - dob.getFullYear()
-  const dobStr = dob.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  // A student saved without a date of birth used to render as 1 January 1970.
+  const dob    = student.dob ? new Date(student.dob) : null
+  const hasDob = !!dob && !Number.isNaN(dob.getTime())
+  const now    = new Date()
+  const age    = hasDob
+    ? now.getFullYear() - dob!.getFullYear() - (now < new Date(now.getFullYear(), dob!.getMonth(), dob!.getDate()) ? 1 : 0)
+    : 0
+  const dobStr = hasDob ? dob!.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
 
   return (
     <div className="overview-grid">
@@ -248,7 +253,7 @@ function OverviewTab({ student, teamDisplayName }: { student: StudentRow; teamDi
         <p style={{ color: '#f5c518', fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', margin: '20px 0 0' }}>
           Personal Info
         </p>
-        <InfoRow label="Date of Birth" value={`${dobStr} (Age ${age})`} />
+        <InfoRow label="Date of Birth" value={hasDob ? `${dobStr} (Age ${age})` : ''} />
         <InfoRow label="Nationality"   value={student.nationality}        />
         <InfoRow label="Team"          value={teamDisplayName}            />
         <InfoRow label="Academy"       value={student.academy}            />
@@ -381,6 +386,8 @@ function MedicalTab({ student, role }: { student: StudentRow; role: string }) {
 }
 
 function RatingsTab({ student }: { student: StudentRow }) {
+  const { user: me } = useSession()
+  const canRate = me?.role === 'admin' || me?.role === 'coach'
   const baseKey = `mila_ratings_${student.id}`
   const [ratings, setRatings] = useState<RatingEntry[]>(() => {
     try {
@@ -405,7 +412,7 @@ function RatingsTab({ student }: { student: StudentRow }) {
           <p style={{ color: '#f5c518', fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', margin: 0 }}>
             Average Scores
           </p>
-          <button
+          {canRate && <button
             onClick={() => setShowModal(true)}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -415,7 +422,7 @@ function RatingsTab({ student }: { student: StudentRow }) {
             }}
           >
             <IconPlus size={16} /> Add Rating
-          </button>
+          </button>}
         </div>
         <div className="metric-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}>
           <CircleRing label="Technique"  score={avgScore('technique')}  />
@@ -474,7 +481,7 @@ function AttendanceTab({ student }: { student: StudentRow }) {
   const present  = sessions.filter(s => s.status === 'present').length
   const late     = sessions.filter(s => s.status === 'late').length
   const absent   = sessions.filter(s => s.status === 'absent').length
-  const rate     = Math.round(((present + late) / sessions.length) * 100)
+  const rate     = sessions.length > 0 ? Math.round(((present + late) / sessions.length) * 100) : 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -533,12 +540,16 @@ function AttendanceTab({ student }: { student: StudentRow }) {
 }
 
 function PaymentsTab({ student }: { student: StudentRow }) {
+  const { user: me } = useSession()
+  const canEditPayments = me?.role === 'admin'
   const storageKey = `mila_payments_${student.id}`
   const [payments, setPayments] = useState<PaymentEntry[]>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? '[]') as PaymentEntry[]
       const base  = generatePayments(student.id, student.payment_status)
-      return base.map(b => saved.find(s => s.id === b.id) ?? b)
+      // Entries staff saved are always shown, even when there is no sample
+      // entry for them to override.
+      return [...base.map(b => saved.find(s => s.id === b.id) ?? b), ...saved.filter(s => !base.some(b => b.id === s.id))]
     } catch {
       return generatePayments(student.id, student.payment_status)
     }
@@ -598,7 +609,7 @@ function PaymentsTab({ student }: { student: StudentRow }) {
                     <td style={{ padding: '11px 0', borderTop: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12 }}>{p.paid_date || '—'}</td>
                     <td style={{ padding: '11px 0', borderTop: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: 12, textTransform: 'capitalize' }}>{p.method || '—'}</td>
                     <td style={{ padding: '11px 0', borderTop: '1px solid var(--border)' }}>
-                      {p.status !== 'paid' && (
+                      {canEditPayments && p.status !== 'paid' && (
                         <button onClick={() => markPaid(p.id)} style={{
                           display: 'flex', alignItems: 'center', gap: 5,
                           backgroundColor: 'rgba(22,163,74,0.15)', color: '#16a34a',

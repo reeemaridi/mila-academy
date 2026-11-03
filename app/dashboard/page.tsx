@@ -115,6 +115,8 @@ function EmptyNote({ text }: { text: string }) {
 export default function DashboardHome() {
   const { user: session } = useSession()
   const name = session?.name ?? 'Coach'
+  // Money figures are for administrators; coaches don't see payments anywhere.
+  const isAdmin = session?.role === 'admin'
   const [initials] = useState(() =>
     (name ?? 'C')
       .split(' ')
@@ -173,8 +175,9 @@ export default function DashboardHome() {
   }, [academyStudents, coachCount])
 
   const statCards = useMemo(() =>
-    STAT_CARD_META.map((m, i) => ({ ...m, value: statValues[i] })),
-    [statValues]
+    STAT_CARD_META.map((m, i) => ({ ...m, value: statValues[i] }))
+      .filter(c => isAdmin || !/Revenue|Unpaid/.test(c.label)),
+    [statValues, isAdmin]
   )
 
   // Team academy lookup for the old localStorage-based team ids ('mfa-u17' etc.)
@@ -267,7 +270,7 @@ export default function DashboardHome() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
         <div>
           <h1 style={{ color: 'var(--text-primary)', fontSize: 'clamp(19px, 5.5vw, 24px)', fontWeight: 700, margin: '0 0 4px', lineHeight: 1.2 }}>
-            {greeting}, {name} 👋
+            {greeting}, {name}
           </h1>
           <p style={{ color: '#f5c518', fontSize: 13, margin: '0 0 2px', letterSpacing: '0.3px' }}>
             {dateStr}
@@ -425,6 +428,7 @@ export default function DashboardHome() {
         <div className="dash-right">
 
           {/* Payment Overview */}
+          {isAdmin && (
           <Card style={{ padding: '20px 24px' }}>
             <SectionTitle title="Payment Overview" />
 
@@ -513,6 +517,7 @@ export default function DashboardHome() {
               </>
             )}
           </Card>
+          )}
 
           {/* Top Rated Players */}
           <Card style={{ padding: '20px 24px' }}>

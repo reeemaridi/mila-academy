@@ -87,12 +87,13 @@ export async function isAdminRequest(): Promise<boolean> {
 }
 
 /** Issue (or re-issue) the session cookie for a user. Route handlers only. */
-export async function setSessionCookie(user: Pick<UserRecord, 'id' | 'role' | 'session_version'>): Promise<void> {
+export async function setSessionCookie(user: Pick<UserRecord, 'id' | 'role' | 'session_version' | 'must_change_password'>): Promise<void> {
   const token = await signSession({
     uid: user.id,
     role: user.role,
     ver: user.session_version,
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
+    ...(user.must_change_password ? { mcp: true } : {}),
   })
   const store = await cookies()
   store.set(SESSION_COOKIE, token, {

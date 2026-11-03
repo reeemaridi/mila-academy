@@ -28,6 +28,10 @@ export async function POST(req: NextRequest) {
     return badRequest('quote and name are required')
   }
 
+  if (Object.hasOwn(body, 'rating') && !(Number.isInteger(body.rating) && (body.rating as number) >= 1 && (body.rating as number) <= 5)) {
+    return badRequest('Rating must be a whole number from 1 to 5')
+  }
+
   const { data, error } = await getSupabaseAdmin()
     .from('testimonials')
     .insert(pick(body, TESTIMONIALS_FIELDS))

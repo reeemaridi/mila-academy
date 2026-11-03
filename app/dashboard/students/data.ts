@@ -1,3 +1,5 @@
+import { DEMO_DATA } from '@/lib/demo'
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export interface StudentRow {
@@ -65,11 +67,13 @@ export interface PaymentEntry {
 
 // ── Teams ──────────────────────────────────────────────────────────────────────
 
-export const TEAMS: Team[] = [
+const DEMO_TEAMS: Team[] = [
   { id: 'mfa-u17', name: 'MFA U-17', academy: 'MFA' },
   { id: 'mfa-u14', name: 'MFA U-14', academy: 'MFA' },
   { id: 'mba-u16', name: 'MBA U-16', academy: 'MBA' },
 ]
+
+export const TEAMS: Team[] = DEMO_DATA ? DEMO_TEAMS : []
 
 export function teamName(id: string) {
   return TEAMS.find((t) => t.id === id)?.name ?? id
@@ -77,7 +81,7 @@ export function teamName(id: string) {
 
 // ── Base students ──────────────────────────────────────────────────────────────
 
-export const BASE_STUDENTS: StudentRow[] = [
+const DEMO_STUDENTS: StudentRow[] = [
   // ── MFA U-17 ─────────────────────────────────────────────────────────────
   {
     id: '1', name: 'Karim Nassar', dob: '2008-03-15', nationality: 'Lebanese',
@@ -215,6 +219,8 @@ export const BASE_STUDENTS: StudentRow[] = [
   },
 ]
 
+export const BASE_STUDENTS: StudentRow[] = DEMO_DATA ? DEMO_STUDENTS : []
+
 // ── Generators (deterministic, no Math.random) ─────────────────────────────────
 
 const SESSION_DATES = [
@@ -225,6 +231,7 @@ const SESSION_DATES = [
 ]
 
 export function generateAttendance(id: string, rate: number): AttendanceEntry[] {
+  if (!DEMO_DATA) return []
   const n = parseInt(id) || 1
   return SESSION_DATES.map((date, i) => {
     const hash = (n * 13 + i * 7) % 100
@@ -245,6 +252,7 @@ const RATING_NOTES = [
 ]
 
 export function generateRatings(id: string, overallRating: number): RatingEntry[] {
+  if (!DEMO_DATA) return []
   const n   = parseInt(id) || 1
   const base = Math.min(10, Math.round(overallRating * 2)) // convert 1-5 → 1-10
   const clamp = (v: number) => Math.min(10, Math.max(1, v))
@@ -295,6 +303,7 @@ const MONTHS_2026 = PAYMENT_MONTHS
 const METHODS: Array<PaymentEntry['method']> = ['cash', 'bank', 'whatsapp', 'cash', 'bank', 'cash']
 
 export function generatePayments(id: string, currentStatus: StudentRow['payment_status']): PaymentEntry[] {
+  if (!DEMO_DATA) return []
   const n = parseInt(id) || 1
   return MONTHS_2026.map((month, i) => {
     const isCurrent = i === MONTHS_2026.length - 1
@@ -316,6 +325,8 @@ export function generatePayments(id: string, currentStatus: StudentRow['payment_
 // ── Merge helpers ──────────────────────────────────────────────────────────────
 
 export function loadAllStudents(): StudentRow[] {
+  // Sample players only in demo mode; students staff added themselves (kept in
+  // this browser by older versions of the dashboard) are always kept.
   if (typeof window === 'undefined') return BASE_STUDENTS
   try {
     const added = JSON.parse(localStorage.getItem('mila_students_added') ?? '[]') as StudentRow[]

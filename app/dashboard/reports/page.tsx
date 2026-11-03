@@ -142,7 +142,7 @@ async function generateProgressPDF() {
 
     // Attendance summary
     const att   = generateAttendance(s.id, s.attendance_rate)
-    const rate  = Math.round(((att.filter(a => a.status !== 'absent').length) / att.length) * 100)
+    const rate  = att.length ? Math.round(((att.filter(a => a.status !== 'absent').length) / att.length) * 100) : 0
     const curY  = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY ?? 120
 
     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 80, 80)

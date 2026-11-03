@@ -16,6 +16,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // PATCH, so updating one field blanked the rest of the row.
   const values = pick(body, TESTIMONIALS_FIELDS)
   if (Object.keys(values).length === 0) return badRequest('No updatable fields provided')
+  if (Object.hasOwn(values, 'rating') && !(Number.isInteger(values.rating) && (values.rating as number) >= 1 && (values.rating as number) <= 5)) {
+    return badRequest('Rating must be a whole number from 1 to 5')
+  }
 
   const { data, error } = await getSupabaseAdmin()
     .from('testimonials')

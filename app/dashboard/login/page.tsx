@@ -111,7 +111,7 @@ export default function LoginPage() {
           Mila Academy Dashboard
         </h1>
         <p style={{ color: '#f5c518', fontSize: 12, textAlign: 'center', margin: '0 0 28px', letterSpacing: '0.5px' }}>
-          Where Champions Are Made
+          Staff and family sign-in
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

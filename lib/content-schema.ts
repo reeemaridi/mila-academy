@@ -163,7 +163,7 @@ export const CONTENT_SECTIONS = [
     fields: [
       f('contact_title',   'Heading',               'text', 'Join Mila Academy'),
       f('contact_submit',  'Submit button',         'text', 'Enroll Now'),
-      f('contact_success', 'Message after sending', 'text', "✓  Enrolled! We'll contact you soon"),
+      f('contact_success', 'Message after sending', 'text', "✓  Thank you! We'll be in touch soon"),
       f('contact_error',   'Message if sending fails', 'text', 'Something went wrong sending your request — please try WhatsApp instead.'),
       f('contact_follow',  'Social links heading',  'text', 'Follow Us'),
     ],

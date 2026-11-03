@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     .from('app_users')
     .insert({
       email: account.email,
-      name: data.parent_name && account.role === 'parent' ? data.parent_name : data.name,
+      name: account.role === 'parent' ? (data.parent_name || `Parent of ${data.name}`) : data.name,
       role: account.role,
       academies: [data.academy],
       student_id: data.id,

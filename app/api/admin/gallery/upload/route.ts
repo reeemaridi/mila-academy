@@ -3,6 +3,7 @@ import { isAdminRequest } from '@/lib/api-auth'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { revalidateSite } from '@/lib/server/revalidate'
 import { dbError, badRequest, unauthorized } from '@/lib/api-fields'
+import { matchesMagicBytes } from '@/lib/server/documents'
 
 // Maps the accepted MIME types to the extension used in storage. The extension
 // is derived from the (validated) content type rather than the uploaded
@@ -48,6 +49,11 @@ export async function POST(req: NextRequest) {
   if (!ext) return badRequest('Unsupported file type')
   if (file.size === 0) return badRequest('File is empty')
   if (file.size > MAX_SIZE) return badRequest('File too large (max 5MB)')
+
+  // The declared type is client-supplied; check the bytes really are that image.
+  if (!matchesMagicBytes(file.type, new Uint8Array(await file.arrayBuffer()))) {
+    return badRequest('The file contents do not match its type')
+  }
 
   const path = `${category}/${crypto.randomUUID()}.${ext}`
 

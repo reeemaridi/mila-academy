@@ -292,7 +292,7 @@ function AddStudentModal({
   onClose: () => void
   onAdd: (s: StudentRow) => void
 }) {
-  const [form, setForm]     = useState(() => ({ ...EMPTY_FORM, team_id: teams[0]?.id ?? '' }))
+  const [form, setForm]     = useState(() => ({ ...EMPTY_FORM }))
   const [section, setSection] = useState<'basic' | 'parent' | 'medical' | 'payment' | 'login'>('basic')
   const [created, setCreated] = useState<{ student: StudentRow; login?: { email: string; password: string } } | null>(null)
   const [saving, setSaving] = useState(false)
@@ -426,7 +426,7 @@ function AddStudentModal({
                   const acad = teams.find(t => t.id === v)?.academy ?? 'MFA'
                   setForm(p => ({ ...p, team_id: v, academy: acad }))
                 }}
-                options={teams.map(t => ({ value: t.id, label: t.name }))}
+                options={[{ value: '', label: 'Select a team…' }, ...teams.map(t => ({ value: t.id, label: t.name }))]}
               />
             </>}
 
@@ -523,10 +523,10 @@ function AddStudentModal({
                 Next →
               </button>
             ) : (
-              <button type="submit" disabled={saving || !form.name || !form.dob || !form.position || (form.create_login && !form.login_email.trim())} style={{
+              <button type="submit" disabled={saving || !form.name || !form.dob || !form.position || !form.team_id || (form.create_login && !form.login_email.trim())} style={{
                 flex: 1, height: 44, borderRadius: 8, border: 'none',
                 backgroundColor: '#16a34a', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                opacity: saving || !form.name || !form.dob || !form.position || (form.create_login && !form.login_email.trim()) ? 0.5 : 1,
+                opacity: saving || !form.name || !form.dob || !form.position || !form.team_id || (form.create_login && !form.login_email.trim()) ? 0.5 : 1,
               }}>
                 {saving ? 'Adding…' : 'Add Student'}
               </button>
@@ -563,7 +563,7 @@ export default function StudentsPage() {
   const [version,       setVersion]     = useState(0)
   const [busyId,        setBusyId]      = useState('')
   const role = getCurrentUser()?.role
-  const canArchive = role === 'admin' || role === 'coach'
+  const canArchive = role === 'admin'
   const canDelete  = role === 'admin'
   const selectedAcademy = useSelectedAcademy()
   const [search,   setSearch]           = useState('')

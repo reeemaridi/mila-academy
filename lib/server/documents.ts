@@ -51,6 +51,7 @@ export function matchesMagicBytes(mime: string, b: Uint8Array): boolean {
     case 'image/jpeg': return at(0, 0xff, 0xd8, 0xff)
     case 'image/png':  return at(0, 0x89, 0x50, 0x4e, 0x47)
     case 'image/webp': return at(0, 0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50)
+    case 'image/gif':  return at(0, 0x47, 0x49, 0x46, 0x38)
     case 'application/pdf': return at(0, 0x25, 0x50, 0x44, 0x46)
     default: return false
   }

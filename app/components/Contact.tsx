@@ -47,6 +47,8 @@ function FloatingField({
   onChange,
   multiline = false,
   required = false,
+  name,
+  autoComplete,
 }: {
   label: string
   type?: string
@@ -54,6 +56,8 @@ function FloatingField({
   onChange: (v: string) => void
   multiline?: boolean
   required?: boolean
+  name?: string
+  autoComplete?: string
 }) {
   const [focused, setFocused] = useState(false)
   const up = focused || value.length > 0
@@ -81,6 +85,8 @@ function FloatingField({
 
       <Tag
         type={type}
+        name={name}
+        autoComplete={autoComplete}
         value={value}
         required={required}
         onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value)}
@@ -178,10 +184,10 @@ export default function Contact({ content }: { content: SiteContent }) {
           </h2>
 
           <form onSubmit={handleSubmit}>
-            <FloatingField label="Full Name"    value={form.name}    onChange={set('name')}  required />
-            <FloatingField label="Email"        type="email" value={form.email}   onChange={set('email')} required />
-            <FloatingField label="Phone"        type="tel"   value={form.phone}   onChange={set('phone')} />
-            <FloatingField label="Child's Age"  type="number" value={form.age}   onChange={set('age')}   />
+            <FloatingField label="Full Name"    name="name" autoComplete="name" value={form.name}    onChange={set('name')}  required />
+            <FloatingField label="Email"        type="email" name="email" autoComplete="email" value={form.email}   onChange={set('email')} required />
+            <FloatingField label="Phone"        type="tel"   name="phone" autoComplete="tel" value={form.phone}   onChange={set('phone')} />
+            <FloatingField label="Child's Age"  type="number" name="child_age" value={form.age}   onChange={set('age')}   />
 
             {/* Select dropdown */}
             <div style={{ position: 'relative', marginBottom: 20 }}>
@@ -231,7 +237,7 @@ export default function Contact({ content }: { content: SiteContent }) {
               </select>
             </div>
 
-            <FloatingField label="Message (optional)" value={form.message} onChange={set('message')} multiline />
+            <FloatingField label="Message (optional)" name="message" value={form.message} onChange={set('message')} multiline />
 
             {/* Submit button */}
             <button

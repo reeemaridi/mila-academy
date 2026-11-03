@@ -22,6 +22,8 @@ export interface TokenPayload {
   ver: number
   /** expiry, unix seconds */
   exp: number
+  /** must choose a new password first: the API refuses everything else until then */
+  mcp?: boolean
 }
 
 const encoder = new TextEncoder()
