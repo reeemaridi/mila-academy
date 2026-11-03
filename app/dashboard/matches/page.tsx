@@ -7,7 +7,7 @@ import {
 } from '@tabler/icons-react'
 import { TEAMS, loadAllStudents, type StudentRow } from '../students/data'
 import { useRoster } from '../hooks/useRoster'
-import { useSelectedAcademy } from '@/lib/use-session'
+import { useSelectedAcademy, useSession } from '@/lib/use-session'
 import { DUMMY_MATCHES, type MatchRecord, type Scorer } from './data'
 import { useModal, modalOverlayProps } from '../hooks/useModal'
 
@@ -595,8 +595,8 @@ function LiveMatchCard({
 // ── Upcoming Match Card ────────────────────────────────────────────────────────
 
 function UpcomingCard({
-  match, onViewLineup, onGoLive,
-}: { match: MatchRecord; onViewLineup: () => void; onGoLive: () => void }) {
+  match, onViewLineup, onGoLive, onDelete,
+}: { match: MatchRecord; onViewLineup: () => void; onGoLive: () => void; onDelete?: () => void }) {
   const days = daysUntil(match.date)
   const acColor = academyColor(match.team_id)
 
@@ -665,6 +665,14 @@ function UpcomingCard({
             }}>
               ● Go Live
             </button>
+            {onDelete && (
+              <button onClick={onDelete} title="Delete this match" aria-label="Delete match" style={{
+                backgroundColor: 'transparent', border: '0.5px solid var(--border)', borderRadius: 8,
+                color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, padding: '8px 12px', cursor: 'pointer',
+              }}>
+                Delete
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -674,7 +682,7 @@ function UpcomingCard({
 
 // ── Result Card (expandable) ───────────────────────────────────────────────────
 
-function ResultCard({ match, students }: { match: MatchRecord; students: StudentRow[] }) {
+function ResultCard({ match, students, onDelete }: { match: MatchRecord; students: StudentRow[]; onDelete?: () => void }) {
   const [open, setOpen] = useState(false)
   const res = matchResult(match)
   const cfg = RESULT_CFG[res]
@@ -686,6 +694,14 @@ function ResultCard({ match, students }: { match: MatchRecord; students: Student
         onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', cursor: 'pointer' }}
       >
+        {onDelete && (
+          <button onClick={e => { e.stopPropagation(); onDelete() }} title="Delete this match" aria-label="Delete match" style={{
+            order: 5, backgroundColor: 'transparent', border: '0.5px solid var(--border)', borderRadius: 8,
+            color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, padding: '6px 10px', cursor: 'pointer',
+          }}>
+            Delete
+          </button>
+        )}
         {/* Result badge */}
         <div style={{
           width: 38, height: 38, borderRadius: 10, flexShrink: 0,
@@ -899,6 +915,15 @@ export default function MatchesPage() {
   const results    = useMemo(() => academyMatches.filter(m => m.status === 'completed').sort((a, b) => b.date.localeCompare(a.date)), [academyMatches])
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
+  // Matches are kept in this browser for now, so deleting one removes it from the
+  // saved list (the only copy). Admins and coaches only.
+  const { user: me } = useSession()
+  const canDelete = me?.role === 'admin' || me?.role === 'coach'
+  function removeMatch(m: MatchRecord) {
+    if (!window.confirm(`Delete the match against ${m.opponent} (${m.date})? This cannot be undone.`)) return
+    persist(matches.filter(x => x.id !== m.id))
+  }
+
   function addMatch(m: MatchRecord) {
     persist([m, ...matches])
     setShowSchedule(false)
@@ -1044,6 +1069,7 @@ export default function MatchesPage() {
                 match={m}
                 onViewLineup={() => setLineupMatch(m)}
                 onGoLive={() => goLive(m)}
+                onDelete={canDelete ? () => removeMatch(m) : undefined}
               />
             ))}
           </div>
@@ -1075,7 +1101,7 @@ export default function MatchesPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {results.map(m => <ResultCard key={m.id} match={m} students={students} />)}
+                {results.map(m => <ResultCard key={m.id} match={m} students={students} onDelete={canDelete ? () => removeMatch(m) : undefined} />)}
               </div>
 
               <LeagueTable results={results} />

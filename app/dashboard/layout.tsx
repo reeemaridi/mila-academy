@@ -12,6 +12,7 @@ import {
   IconUsersGroup,
 } from '@tabler/icons-react'
 import { ToastContainer } from './components/ToastContainer'
+import AdminTour from './components/AdminTour'
 import { useTheme, toggleTheme } from '@/lib/theme'
 import type { StudentRow } from './students/data'
 import { useAdminData } from './components/admin-ui'
@@ -452,6 +453,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           coaches={searchCoaches}
         />
 
+        {/* First-time setup guide for administrators (not while a temporary password is still being replaced) */}
+        {user.role === 'admin' && !user.mustChangePassword && <AdminTour key={user.id} userId={user.id} />}
+
         <div id="dash-main" className="dash-main-content-wrapper" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           {/* ── Header ── */}
           <header
@@ -502,6 +506,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="dash-header-date" style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                 {new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
+
+              {user.role === 'admin' && (
+                <button
+                  onClick={() => window.dispatchEvent(new Event('mila-open-tour'))}
+                  title="Step-by-step guide to setting up your academy"
+                  style={{
+                    color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', whiteSpace: 'nowrap', backgroundColor: 'var(--bg-card)',
+                  }}
+                >
+                  Setup guide
+                </button>
+              )}
 
               {/* Link back to the public homepage */}
               <Link
